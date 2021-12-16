@@ -6153,7 +6153,7 @@ const STATE_FINISHED = 3;
     this.ac = audioContext;
     this.audioRequestState = STATE_UNINITIALIZED;
     this.ee = ee;
-  }
+    }
 
   setStateChange(state) {
     this.audioRequestState = state;
@@ -6284,9 +6284,99 @@ class IdentityLoader extends Loader {
       });
     });
   }
-});
+    });
 
-;// CONCATENATED MODULE: ./src/track/loader/LoaderFactory.js
+//CONCATENATED MODULE: ./src/track/loader/WaveformLoader.js
+
+    const WAVEFORM_STATE_UNINITIALIZED = 0;
+    const WAVEFORM_STATE_LOADING = 1;
+    const WAVEFORM_STATE_FINISHED = 2;
+
+
+
+    const WaveformLoader = (class {
+        constructor(trackInfo) {
+            this.trackInfo = trackInfo;
+            this.waveformRequestState = WAVEFORM_STATE_UNINITIALIZED;
+        }
+
+        setStateChange(state) {
+            this.waveformRequestState = state;
+        }
+
+        fileProgress(e) {
+            let percentComplete = 0;
+            if (this.audioRequestState === WAVEFORM_STATE_UNINITIALIZED) {
+                this.setStateChange(WAVEFORM_STATE_LOADING);
+            }
+
+            if (e.lengthComputable) {
+                percentComplete = (e.loaded / e.total) * 100;
+            }
+        }
+
+
+        fileLoad(e) {
+            const waveformData = e.target.response || e.target.result;
+            console.log("BEM waveform fileLoad");
+            console.log(this.trackInfo);
+            return new Promise((resolve, reject) => {
+                console.log("BEM FILELOAD RESOLVE:");
+                console.log(waveformData);
+                this.setStateChange(WAVEFORM_STATE_FINISHED);
+                if (waveformData == undefined || waveformData.data == undefined)
+                    resolve(undefined);
+                    //BEM reject("Error while decoding data in peaks file");
+                else
+                    resolve(waveformData.data);
+            });
+        }
+    });
+
+// CONCATENATED MODULE: ./src/track/loader/XHRWaveformLoader.js
+
+
+/* harmony default export */ const XHRWaveformLoader = (class extends WaveformLoader {
+        /**
+         * Loads an audio file via XHR.
+         */
+        load() {
+            return new Promise((resolve, reject) => {
+                if (!this.trackInfo.peaksSrc)
+                   resolve(undefined);
+                const xhr = new XMLHttpRequest();
+                console.log("BEM this.trackInfo.peaksSrc:" + this.trackInfo.peaksSrc);
+                console.log(this);
+                xhr.open("GET", this.trackInfo.peaksSrc, true);
+                xhr.responseType = "json";
+                xhr.send();
+
+                xhr.addEventListener("progress", (e) => {
+                    console.log("BEM XMLWAVEFORM PROGRESS");
+                    super.fileProgress(e);
+                });
+
+                xhr.addEventListener("load", (e) => {
+                    console.log("BEM LOADING WAVEFORM!!!!!");
+                    const decoderPromise = super.fileLoad(e);
+                    console.log("BEM decoderPromise");
+                    console.log(decoderPromise);
+                    decoderPromise
+                        .then((waveformBuffer) => {
+                            resolve(waveformBuffer);
+                        })
+                        .catch(reject);
+                });
+
+                xhr.addEventListener("error", () => {
+                    reject(Error(`Track ${this.src} failed to load`));
+                });
+            });
+        }
+    });
+
+
+// CONCATENATED MODULE: ./src/track/loader/LoaderFactory.js
 
 
 
@@ -6302,10 +6392,17 @@ class IdentityLoader extends Loader {
     }
 
     throw new Error("Unsupported src type");
-  }
+    }
+
+    static createWaveformLoader(trackInfo) {
+        console.log("BEM typeof trackInfo:" + typeof (trackInfo) + " e vale:"+trackInfo);
+        if (typeof trackInfo === "object") 
+            return new XHRWaveformLoader(trackInfo);
+        throw new Error("Unsupported src type");
+    }
 });
 
-;// CONCATENATED MODULE: ./src/render/ScrollHook.js
+// CONCATENATED MODULE: ./src/render/ScrollHook.js
 
 
 /*
@@ -7189,9 +7286,8 @@ const MAX_CANVAS_WIDTH = 1000;
     this.waveOutlineColor = color;
     }
 
-    setPeaksContent(peaksSrc) {
-        console.log("BEM peaksSrc:" + peaksSrc);
-        console.log("TODO: PRENDI CONTENUTO, NON SRC");
+    setPeaksContent(content) {
+        console.log("BEM content:" + content);
         /*this.getJSON(peaksSrc,
             function (err, result) {
                 if (err !== null) {
@@ -7201,8 +7297,8 @@ const MAX_CANVAS_WIDTH = 1000;
                 }
             });
         */
-        this.peaksContent = undefined;
-        this.peaksContent = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,-1,0,-4,2,-4,5,-44,6,-333,232,-339,310,-486,631,-769,576,-497,768,-683,457,-742,201,-256,1251,-1712,1006,-2489,5045,-1398,4756,-3353,-257,-3110,7745,-2502,2239,-3208,1482,-3853,10052,-4026,3383,-4995,2290,-3302,8299,-4471,1817,-3660,-260,-3681,9384,-6287,2941,-3325,338,-3271,8718,-5779,2169,-2957,752,-2808,8677,-5197,3971,-1369,1736,-2428,5249,-5054,7809,-1478,1708,-3026,1311,-5393,9282,-3302,2333,-2417,2253,-2783,11055,-6762,9592,-5649,4077,-2933,354,-6534,14639,-7560,5688,-3262,2542,-3293,13962,-6679,8298,-6460,5871,-4298,1039,-3452,14993,-7711,7917,-3694,4280,-4708,978,-1518,13967,-6769,6018,-4725,4712,-4687,1247,-1971,12241,-5879,5683,-3971,2750,-3103,1114,-1156,11729,-5413,5308,-3372,3565,-3742,1774,-963,9606,-4410,4513,-2508,3010,-2856,2382,-1226,8849,-3836,5358,-2945,1968,-1820,682,-1377,6957,-2720,5986,-2788,2644,-2539,313,-882,6243,-2430,6085,-3195,1886,-1877,1584,-1652,1230,-1694,6001,-2175,1050,-1372,711,-1489,821,-2286,5255,-2362,1296,-663,1171,-1531,16,-174,4554,-2005,1142,-1983,827,-1445,-117,-864,3287,-1995,3562,-1699,1064,-1380,1038,-1330,942,-363,3209,-1718,390,-1458,811,-1266,646,-635,2840,-1628,3136,-1192,728,-1222,49,-818,990,-802,2518,-965,-80,-1006,418,-894,562,-98,2637,-848,1452,-730,385,-727,-326,-418,663,-610,2113,-821,108,-665,171,-527,340,105,1407,-557,785,-564,-165,-511,122,131,400,-17,457,-7,11,-3,4,-1,0,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+        this.peaksContent = content;
+        //this.peaksContent = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,-1,0,-4,2,-4,5,-44,6,-333,232,-339,310,-486,631,-769,576,-497,768,-683,457,-742,201,-256,1251,-1712,1006,-2489,5045,-1398,4756,-3353,-257,-3110,7745,-2502,2239,-3208,1482,-3853,10052,-4026,3383,-4995,2290,-3302,8299,-4471,1817,-3660,-260,-3681,9384,-6287,2941,-3325,338,-3271,8718,-5779,2169,-2957,752,-2808,8677,-5197,3971,-1369,1736,-2428,5249,-5054,7809,-1478,1708,-3026,1311,-5393,9282,-3302,2333,-2417,2253,-2783,11055,-6762,9592,-5649,4077,-2933,354,-6534,14639,-7560,5688,-3262,2542,-3293,13962,-6679,8298,-6460,5871,-4298,1039,-3452,14993,-7711,7917,-3694,4280,-4708,978,-1518,13967,-6769,6018,-4725,4712,-4687,1247,-1971,12241,-5879,5683,-3971,2750,-3103,1114,-1156,11729,-5413,5308,-3372,3565,-3742,1774,-963,9606,-4410,4513,-2508,3010,-2856,2382,-1226,8849,-3836,5358,-2945,1968,-1820,682,-1377,6957,-2720,5986,-2788,2644,-2539,313,-882,6243,-2430,6085,-3195,1886,-1877,1584,-1652,1230,-1694,6001,-2175,1050,-1372,711,-1489,821,-2286,5255,-2362,1296,-663,1171,-1531,16,-174,4554,-2005,1142,-1983,827,-1445,-117,-864,3287,-1995,3562,-1699,1064,-1380,1038,-1330,942,-363,3209,-1718,390,-1458,811,-1266,646,-635,2840,-1628,3136,-1192,728,-1222,49,-818,990,-802,2518,-965,-80,-1006,418,-894,562,-98,2637,-848,1452,-730,385,-727,-326,-418,663,-610,2113,-821,108,-665,171,-527,340,105,1407,-557,785,-564,-165,-511,122,131,400,-17,457,-7,11,-3,4,-1,0,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
         //BEM this doesn't work. TODO: Load json from url
          /* header("Access-Control-Allow-Origin: *");
         fetch('https://drive.google.com/file/d/1NCScuv4D3kO7BB6j6TjYwjy-qCkluu6G/view?usp=sharing')
@@ -9152,7 +9248,11 @@ class AnnotationList {
   }
 
     //BEM foreach track of the tracklist, loads the audio. Returno a Promise with audioBuffer object inside
-  load(trackList) {
+    load(trackList) {
+        console.log("BEM - load typeof(trackInfo):" + typeof (trackList[0]));
+        console.log(trackList);
+        var 
+
     const loadPromises = trackList.map((trackInfo) => {
       const loader = LoaderFactory.createLoader(
         trackInfo.src,
@@ -9160,16 +9260,37 @@ class AnnotationList {
         this.ee
       );
       return loader.load();
-
     });
+
+
+
+
+    const loadWaveforms = trackList.map((trackInfo) => {
+        console.log("BEM trackInfo");
+        console.log(trackInfo);
+        const wfloader = LoaderFactory.createWaveformLoader(
+            trackInfo
+        );
+        return wfloader.load();
+    });
+
+
+    Promise.all(loadWaveforms).then((values) => {
+        console.log("BEM loaded all waveforms, printing values");
+        console.log(values);
+    });
+
+
+
+
 
     return Promise.all(loadPromises)
       .then((audioBuffers) => {
         this.ee.emit("audiosourcesloaded");
 
           const tracks = audioBuffers.map((audioBuffer, index) => {
-              console.log("BEM trackList:");
-              console.log(trackList);
+          console.log("BEM trackList:");
+          console.log(trackList);
           const info = trackList[index];
           const name = info.name || "Untitled";
           const start = info.start || 0;
@@ -9200,7 +9321,7 @@ class AnnotationList {
           track.setCues(cueIn, cueOut);
           track.setCustomClass(customClass);
           track.setWaveOutlineColor(waveOutlineColor);
-          track.setPeaksContent(peaksSrc);
+          //track.setPeaksContent(peaksSrc);
           console.log("end setup track");
 
           if (fadeIn !== undefined) {
