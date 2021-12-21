@@ -6182,11 +6182,11 @@ const STATE_FINISHED = 3;
     return new Promise((resolve, reject) => {
       this.ac.decodeAudioData(
         audioData,
-        (audioBuffer) => {
-          this.audioBuffer = audioBuffer;
-          this.setStateChange(STATE_FINISHED);
-
-          resolve(audioBuffer);
+          (audioBuffer) => {
+              console.log("BEM decodeAudioData");
+              this.audioBuffer = audioBuffer;
+              this.setStateChange(STATE_FINISHED);
+              resolve(audioBuffer);
         },
         (err) => {
           if (err === null) {
@@ -6260,7 +6260,7 @@ class IdentityLoader extends Loader {
   load() {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-
+      console.log("BEM loading audio file with xhr");
       xhr.open("GET", this.src, true);
       xhr.responseType = "arraybuffer";
       xhr.send();
@@ -6273,8 +6273,9 @@ class IdentityLoader extends Loader {
         const decoderPromise = super.fileLoad(e);
 
         decoderPromise
-          .then((audioBuffer) => {
-            resolve(audioBuffer);
+            .then((audioBuffer) => {
+                console.log("BEM resolve audioBuffer");
+                resolve(audioBuffer);
           })
           .catch(reject);
       });
@@ -9251,8 +9252,8 @@ class AnnotationList {
     load(trackList) {
         console.log("BEM - load typeof(trackInfo):" + typeof (trackList[0]));
         console.log(trackList);
-        var 
 
+  
     const loadPromises = trackList.map((trackInfo) => {
       const loader = LoaderFactory.createLoader(
         trackInfo.src,
@@ -9284,13 +9285,19 @@ class AnnotationList {
 
 
 
-    return Promise.all(loadPromises)
+      return Promise.all(loadPromises)
+      //return Promise.all(loadWaveforms)
       .then((audioBuffers) => {
         this.ee.emit("audiosourcesloaded");
 
           const tracks = audioBuffers.map((audioBuffer, index) => {
-          console.log("BEM trackList:");
-          console.log(trackList);
+              console.log("BEM trackList:");
+              console.log(trackList);
+              console.log("BEM audioBuffer:");
+              console.log(audioBuffer);
+              var bemOptions = {
+                  "duration": 0.5108541666666667, "length": 24521, "numberOfChannels": 1,"sampleRate":48000};
+              //audioBuffer = new AudioBuffer(bemOptions);
           const info = trackList[index];
           const name = info.name || "Untitled";
           const start = info.start || 0;

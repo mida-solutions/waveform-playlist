@@ -15,6 +15,7 @@
         <i class="fas fa-pause"></i>
     </button>
     <div id="playlist"></div>
+    <div id="audioFiles"></div>
     <script src="../../waveform-playlist.js"></script>
     <script>
         var playlist = WaveformPlaylist.init({
@@ -25,7 +26,11 @@
 
         playlist.load([
             {
-                src: "hello.mp3"
+                src: "hello2.mp3",
+                peaksSrc: "hello2.json"
+            },
+            {
+                src: "medium.wav"
             }
         ]).then(function () {
             var ee = playlist.getEventEmitter();
