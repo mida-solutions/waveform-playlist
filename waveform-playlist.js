@@ -6183,7 +6183,7 @@ const STATE_FINISHED = 3;
       this.ac.decodeAudioData(
         audioData,
           (audioBuffer) => {
-              console.log("BEM decodeAudioData");
+              console.log("BEM decodeAudioData -" + new Date().toLocaleString());
               this.audioBuffer = audioBuffer;
               this.setStateChange(STATE_FINISHED);
               resolve(audioBuffer);
@@ -6274,7 +6274,7 @@ class IdentityLoader extends Loader {
 
         decoderPromise
             .then((audioBuffer) => {
-                console.log("BEM resolve audioBuffer");
+                console.log("BEM resolve audioBuffer - " + new Date().toLocaleString());
                 resolve(audioBuffer);
           })
           .catch(reject);
@@ -6319,17 +6319,20 @@ class IdentityLoader extends Loader {
 
         fileLoad(e) {
             const waveformData = e.target.response || e.target.result;
-            console.log("BEM waveform fileLoad");
+            console.log("BEM waveform fileLoad - " + new Date().toLocaleString());
             console.log(this.trackInfo);
             return new Promise((resolve, reject) => {
-                console.log("BEM FILELOAD RESOLVE:");
+                console.log("BEM FILELOAD RESOLVE:" + new Date().toLocaleString());
+                var myResult = {};
+                myResult.peaks = waveformData;
+                myResult.peaks.data[0] = new Int16Array(waveformData.data);
                 console.log(waveformData);
                 this.setStateChange(WAVEFORM_STATE_FINISHED);
                 if (waveformData == undefined || waveformData.data == undefined)
                     resolve(undefined);
                     //BEM reject("Error while decoding data in peaks file");
                 else
-                    resolve(waveformData.data);
+                    resolve(myResult);
             });
         }
     });
@@ -7452,7 +7455,9 @@ const MAX_CANVAS_WIDTH = 1000;
       console.log("BEM post setPeaks");
   }
 
-  setPeaks(peaks) {
+    setPeaks(peaks) {
+        console.log("BEM peaks di setPeaks() :");
+        console.log(peaks);
     this.peaks = peaks;
   }
 
@@ -7772,7 +7777,9 @@ const MAX_CANVAS_WIDTH = 1000;
     );
   }
 
-  render(data) {
+    render(data) {
+        console.log("BEM loggo render");
+        console.log(this.peaks);
     const width = this.peaks.length;
     const playbackX = secondsToPixels(
       data.playbackSeconds,
@@ -7790,7 +7797,7 @@ const MAX_CANVAS_WIDTH = 1000;
       data.sampleRate
     );
     let progressWidth = 0;
-    const numChan = this.peaks.data.length;
+    const numChan = this.peaks.channels || this.peaks.data.length;
     const scale = Math.floor(window.devicePixelRatio);
 
     if (playbackX > 0 && playbackX > startX) {
@@ -9249,8 +9256,18 @@ class AnnotationList {
   }
 
     //BEM foreach track of the tracklist, loads the audio. Returno a Promise with audioBuffer object inside
-    load(trackList) {
-        console.log("BEM - load typeof(trackInfo):" + typeof (trackList[0]));
+    load(allTrackList) {
+        console.log(allTrackList);
+        var trackList = [];
+        var prerenderedTrackList = [];
+        allTrackList.forEach(track => {
+            if (track.peaksSrc == undefined)
+                trackList.push(track);
+            else
+                prerenderedTrackList.push(track);
+        });
+
+        console.log("BEM - load typeof(trackInfo):" + typeof (trackList[0]) + " time - " + new Date().toLocaleString());
         console.log(trackList);
 
   
@@ -9266,7 +9283,7 @@ class AnnotationList {
 
 
 
-    const loadWaveforms = trackList.map((trackInfo) => {
+        const loadWaveforms = prerenderedTrackList.map((trackInfo) => {
         console.log("BEM trackInfo");
         console.log(trackInfo);
         const wfloader = LoaderFactory.createWaveformLoader(
@@ -9276,28 +9293,112 @@ class AnnotationList {
     });
 
 
-    Promise.all(loadWaveforms).then((values) => {
-        console.log("BEM loaded all waveforms, printing values");
-        console.log(values);
-    });
+        Promise.all(loadWaveforms).then((peaksInfo) => {
+            console.log("BEM loaded all waveforms, printing values - " + new Date().toLocaleString());
+            console.log(peaksInfo);
+            console.log(prerenderedTrackList);
+
+            this.ee.emit("audiosourcesloaded");
+            console.log("BEM loaded all waveforms " + new Date().toLocaleString());
+
+            const tracks = prerenderedTrackList.map((prerenderedTrack, index) => {
+                console.log("BEM prerenderedTrackList:");
+                console.log(peaksInfo);
+                const info = peaksInfo[index];
+                const name = info.name || "Untitled";
+                const start = info.start || 0;
+                const states = info.states || {};
+                const fadeIn = info.fadeIn;
+                const fadeOut = info.fadeOut;
+                const cueIn = info.cuein || 0;
+                const cueOut = info.cueout || info.duration;
+                const gain = info.gain || 1;
+                const muted = info.muted || false;
+                const soloed = info.soloed || false;
+                const selection = info.selected;
+                const peaks = info.peaks || { type: "WebAudio", mono: this.mono };
+                const customClass = info.customClass || undefined;
+                const waveOutlineColor = info.waveOutlineColor || undefined;
+                const stereoPan = info.stereoPan || 0;
+
+                // webaudio specific playout for now.
+                //const playout = new Playout(this.ac, audioBuffer);
+
+                const track = new Track();
+                track.src = info.src;
+                //track.setBuffer(audioBuffer);
+                track.setName(name);
+                track.setEventEmitter(this.ee);
+                track.setEnabledStates(states);
+                track.setCues(cueIn, cueOut);
+                track.setCustomClass(customClass);
+                track.setWaveOutlineColor(waveOutlineColor);
+                //track.setPeaksContent(peaksSrc);
+                console.log("end setup track");
+
+                if (fadeIn !== undefined) {
+                    track.setFadeIn(fadeIn.duration, fadeIn.shape);
+                }
+
+                if (fadeOut !== undefined) {
+                    track.setFadeOut(fadeOut.duration, fadeOut.shape);
+                }
+
+                if (selection !== undefined) {
+                    this.setActiveTrack(track);
+                    this.setTimeSelection(selection.start, selection.end);
+                }
+
+                if (peaks !== undefined) {
+                    track.setPeakData(peaks);
+                }
+
+                track.setState(this.getState());
+                track.setStartTime(start);
+                //track.setPlayout(playout);
+
+                //track.setGainLevel(gain);
+                //track.setStereoPanValue(stereoPan);
+
+                if (muted) {
+                    this.muteTrack(track);
+                }
+
+                if (soloed) {
+                    this.soloTrack(track);
+                }
+
+                console.log("BEM setto peaks per index:" +index);
+                console.log(peaksInfo);
+                track.setPeaks(peaksInfo[index].peaks);
+                console.log(track);
+
+                return track;
+            });
+
+            this.tracks = this.tracks.concat(tracks);
+            this.adjustDuration();
+            console.log("BEM start render loadWaveforms - " + new Date().toLocaleString());
+            this.draw(this.render());
+            console.log("BEM end render - " + new Date().toLocaleString());
+
+            this.ee.emit("audiosourcesrendered");
+        });
 
 
 
 
 
       return Promise.all(loadPromises)
-      //return Promise.all(loadWaveforms)
       .then((audioBuffers) => {
-        this.ee.emit("audiosourcesloaded");
+          this.ee.emit("audiosourcesloaded");
+          console.log("BEM loaded all tracks " + new Date().toLocaleString());
 
           const tracks = audioBuffers.map((audioBuffer, index) => {
-              console.log("BEM trackList:");
-              console.log(trackList);
-              console.log("BEM audioBuffer:");
-              console.log(audioBuffer);
-              var bemOptions = {
-                  "duration": 0.5108541666666667, "length": 24521, "numberOfChannels": 1,"sampleRate":48000};
-              //audioBuffer = new AudioBuffer(bemOptions);
+            console.log("BEM trackList:");
+            console.log(trackList);
+            console.log("BEM audioBuffer:");
+            console.log(audioBuffer);
           const info = trackList[index];
           const name = info.name || "Untitled";
           const start = info.start || 0;
@@ -9314,7 +9415,6 @@ class AnnotationList {
           const customClass = info.customClass || undefined;
           const waveOutlineColor = info.waveOutlineColor || undefined;
           const stereoPan = info.stereoPan || 0;
-          const peaksSrc = info.peaksSrc || undefined;
 
           // webaudio specific playout for now.
           const playout = new Playout(this.ac, audioBuffer);
@@ -9367,13 +9467,17 @@ class AnnotationList {
           console.log("BEM pre calculate peaks with samplesPerPixel:" + this.samplesPerPixel + " and sampleRate:" + this.sampleRate);
           track.calculatePeaks(this.samplesPerPixel, this.sampleRate);
           console.log("BEM post calculate peaks");
-
+              
+                console.log(track);
           return track;
         });
 
         this.tracks = this.tracks.concat(tracks);
-        this.adjustDuration();
-        this.draw(this.render());
+          this.adjustDuration();
+          console.log("BEM start render loadPromises - " + new Date().toLocaleString());
+          console.log(this);
+          this.draw(this.render());
+          console.log("BEM end render - " + new Date().toLocaleString());
 
         this.ee.emit("audiosourcesrendered");
       })
