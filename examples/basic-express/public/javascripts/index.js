@@ -1,5 +1,5 @@
 import WaveformPlaylist from "waveform-playlist";
-
+console.log("BEM init index.js");
 const actions = [
   {
     class: "fas.fa-minus",
@@ -112,4 +112,7 @@ async function main() {
   ]);
 }
 
+console.log("BEM end index.js");
 main();
+
+console.log("BEM end main() index.js");

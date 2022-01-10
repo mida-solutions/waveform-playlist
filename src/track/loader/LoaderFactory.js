@@ -1,6 +1,7 @@
 import BlobLoader from "./BlobLoader";
 import IdentityLoader from "./IdentityLoader";
 import XHRLoader from "./XHRLoader";
+import XHRLoader from "./XHRWaveformLoader";
 
 export default class {
   static createLoader(src, audioContext, ee) {

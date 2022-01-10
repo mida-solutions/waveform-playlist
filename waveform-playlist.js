@@ -6367,6 +6367,15 @@ class IdentityLoader extends Loader {
                     console.log(decoderPromise);
                     decoderPromise
                         .then((waveformBuffer) => {
+                            var element = document.createElement("audio");
+                            element.className = "audio";
+                            element.setAttribute("controls", "controls"); //BEM togliere controllo
+                            var source = document.createElement("source");
+                            source.setAttribute("src", this.trackInfo.src);
+                            source.setAttribute("type", "audio/mpeg");
+                            element.appendChild(source);
+                            var container = document.getElementById("prerendered_waveforms");
+                            container.appendChild(element);
                             resolve(waveformBuffer);
                         })
                         .catch(reject);
@@ -8162,7 +8171,9 @@ const MAX_CANVAS_WIDTH = 1000;
     it is playing slightly more samples than it has it won't play at all.
     Unfortunately it doesn't seem to work if you just give it a start time.
   */
-  play(when, start, duration) {
+    play(when, start, duration) {
+        console.log("BEM print play info:");
+        console.log("BEM when:" + when + " ,start:" + start + " ,duration:" + duration);
     this.source.start(when, start, duration);
   }
 
@@ -9122,7 +9133,8 @@ class AnnotationList {
       this.record();
     });
 
-    ee.on("play", (start, end) => {
+      ee.on("play", (start, end) => {
+          console.log("BEM ee.play");
       this.play(start, end);
     });
 
@@ -9320,13 +9332,15 @@ class AnnotationList {
                 const customClass = info.customClass || undefined;
                 const waveOutlineColor = info.waveOutlineColor || undefined;
                 const stereoPan = info.stereoPan || 0;
+                //BEM TODO SISTEMA DURATION
+                const audioBuffer = new AudioBuffer({ duration: 1.0, length: info.peaks.length, numberOfChannels: info.peaks.channels, sampleRate: info.peaks.sample_rate});
 
                 // webaudio specific playout for now.
-                //const playout = new Playout(this.ac, audioBuffer);
+                const playout = new Playout(this.ac, audioBuffer);
 
                 const track = new Track();
-                track.src = info.src;
-                //track.setBuffer(audioBuffer);
+                track.src = prerenderedTrack.src;
+                track.setBuffer(audioBuffer);
                 track.setName(name);
                 track.setEventEmitter(this.ee);
                 track.setEnabledStates(states);
@@ -9355,10 +9369,10 @@ class AnnotationList {
 
                 track.setState(this.getState());
                 track.setStartTime(start);
-                //track.setPlayout(playout);
+                track.setPlayout(playout);
 
-                //track.setGainLevel(gain);
-                //track.setStereoPanValue(stereoPan);
+                track.setGainLevel(gain);
+                track.setStereoPanValue(stereoPan);
 
                 if (muted) {
                     this.muteTrack(track);
@@ -9393,6 +9407,8 @@ class AnnotationList {
       .then((audioBuffers) => {
           this.ee.emit("audiosourcesloaded");
           console.log("BEM loaded all tracks " + new Date().toLocaleString());
+
+          console.log(audioBuffers);
 
           const tracks = audioBuffers.map((audioBuffer, index) => {
             console.log("BEM trackList:");
@@ -9743,39 +9759,53 @@ class AnnotationList {
     );
   }
 
-  play(startTime, endTime) {
+    play(startTime, endTime) {
+        console.log("BEM play event");
     clearTimeout(this.resetDrawTimer);
 
+        console.log("BEM play event2");
     const currentTime = this.ac.currentTime;
     const selected = this.getTimeSelection();
     const playoutPromises = [];
 
+        console.log("BEM play event3");
     const start = startTime || this.pausedAt || this.cursor;
     let end = endTime;
 
+        console.log("BEM play event4");
     if (!end && selected.end !== selected.start && selected.end > start) {
       end = selected.end;
-    }
-
-    if (this.isPlaying()) {
+        }
+        console.log("BEM play event5");
+        console.log(this);
+        console.log("BEM isPlaying() ? " + this.isPlaying());
+        if (this.isPlaying()) {
+            console.log("BEM isPlaying()");
       return this.restartPlayFrom(start, end);
-    }
+        }
+        console.log("BEM play event6");
 
     this.tracks.forEach((track) => {
+      console.log("BEM play event6.1");
       track.setState("cursor");
+        console.log("BEM play event6.2");
       playoutPromises.push(
         track.schedulePlay(currentTime, start, end, {
           shouldPlay: this.shouldTrackPlay(track),
           masterGain: this.masterGain,
         })
-      );
+        );
+        console.log("BEM play event6.3");
     });
+        console.log("BEM play event7");
 
     this.lastPlay = currentTime;
     // use these to track when the playlist has fully stopped.
     this.playoutPromises = playoutPromises;
+    console.log("BEM play event8");
     this.startAnimation(start);
 
+        console.log("BEM play event9");
     return Promise.all(this.playoutPromises);
   }
 
