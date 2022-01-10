@@ -6296,8 +6296,9 @@ class IdentityLoader extends Loader {
 
 
     const WaveformLoader = (class {
-        constructor(trackInfo) {
+        constructor(trackInfo, ee = event_emitter_default()()) {
             this.trackInfo = trackInfo;
+            this.ee = ee;
             this.waveformRequestState = WAVEFORM_STATE_UNINITIALIZED;
         }
 
@@ -6369,6 +6370,7 @@ class IdentityLoader extends Loader {
                         .then((waveformBuffer) => {
                             var element = document.createElement("audio");
                             element.className = "audio";
+                            element.setAttribute("preload", "metadata");
                             element.setAttribute("controls", "controls"); //BEM togliere controllo
                             var source = document.createElement("source");
                             source.setAttribute("src", this.trackInfo.src);
@@ -6376,7 +6378,9 @@ class IdentityLoader extends Loader {
                             element.appendChild(source);
                             var container = document.getElementById("prerendered_waveforms");
                             container.appendChild(element);
-                            resolve(waveformBuffer);
+                            element.onloadedmetadata = function () {
+                                resolve(waveformBuffer);
+                            }
                         })
                         .catch(reject);
                 });
@@ -6407,10 +6411,10 @@ class IdentityLoader extends Loader {
     throw new Error("Unsupported src type");
     }
 
-    static createWaveformLoader(trackInfo) {
+    static createWaveformLoader(trackInfo, ee) {
         console.log("BEM typeof trackInfo:" + typeof (trackInfo) + " e vale:"+trackInfo);
         if (typeof trackInfo === "object") 
-            return new XHRWaveformLoader(trackInfo);
+            return new XHRWaveformLoader(trackInfo, ee);
         throw new Error("Unsupported src type");
     }
 });
@@ -7491,6 +7495,10 @@ const MAX_CANVAS_WIDTH = 1000;
 
   getDuration() {
     return this.duration;
+    }
+
+  setDuration(duration) {
+    this.duration = duration;
   }
 
   isPlaying() {
@@ -7522,7 +7530,10 @@ const MAX_CANVAS_WIDTH = 1000;
     returns a Promise that will resolve when the AudioBufferSource
     is either stopped or plays out naturally.
   */
-  schedulePlay(now, startTime, endTime, config) {
+    schedulePlay(now, startTime, endTime, config) {
+        console.log("BEM schedulePlay - now:" + now + ", startTime:" + startTime + ", endTime:" + endTime);
+        console.log(config);
+        console.log(this);
     let start;
     let duration;
     let when = now;
@@ -7556,7 +7567,6 @@ const MAX_CANVAS_WIDTH = 1000;
       start = 0;
       // schedule additional delay for this audio node.
       when += this.startTime - startTime;
-
       if (endTime) {
         segment -= this.startTime - startTime;
         duration = Math.min(segment, this.duration);
@@ -7565,7 +7575,6 @@ const MAX_CANVAS_WIDTH = 1000;
       }
     } else {
       start = startTime - this.startTime;
-
       if (endTime) {
         duration = Math.min(segment, this.duration - start);
       } else {
@@ -7613,6 +7622,7 @@ const MAX_CANVAS_WIDTH = 1000;
     playoutSystem.setShouldPlay(options.shouldPlay);
     playoutSystem.setMasterGainLevel(options.masterGain);
     playoutSystem.setStereoPanValue(this.stereoPan);
+    console.log("BEM playoutSystem.play()");
     playoutSystem.play(when, start, duration);
 
     return sourcePromise;
@@ -9267,7 +9277,7 @@ class AnnotationList {
     });
   }
 
-    //BEM foreach track of the tracklist, loads the audio. Returno a Promise with audioBuffer object inside
+    //BEM foreach track of the tracklist, loads the audio. Return a Promise with audioBuffer object inside
     load(allTrackList) {
         console.log(allTrackList);
         var trackList = [];
@@ -9299,7 +9309,8 @@ class AnnotationList {
         console.log("BEM trackInfo");
         console.log(trackInfo);
         const wfloader = LoaderFactory.createWaveformLoader(
-            trackInfo
+            trackInfo,
+            this.ee
         );
         return wfloader.load();
     });
@@ -9332,8 +9343,9 @@ class AnnotationList {
                 const customClass = info.customClass || undefined;
                 const waveOutlineColor = info.waveOutlineColor || undefined;
                 const stereoPan = info.stereoPan || 0;
-                //BEM TODO SISTEMA DURATION
-                const audioBuffer = new AudioBuffer({ duration: 1.0, length: info.peaks.length, numberOfChannels: info.peaks.channels, sampleRate: info.peaks.sample_rate});
+                const duration = document.getElementById("prerendered_waveforms").children.item(index).duration;
+                console.log("BEM prerendered duration:"+duration);
+                const audioBuffer = new AudioBuffer({ duration: duration, length: info.peaks.length, numberOfChannels: info.peaks.channels, sampleRate: info.peaks.sample_rate});
 
                 // webaudio specific playout for now.
                 const playout = new Playout(this.ac, audioBuffer);
@@ -9342,12 +9354,13 @@ class AnnotationList {
                 track.src = prerenderedTrack.src;
                 track.setBuffer(audioBuffer);
                 track.setName(name);
+                console.log("BEM eventEmitter:");
                 track.setEventEmitter(this.ee);
                 track.setEnabledStates(states);
                 track.setCues(cueIn, cueOut);
                 track.setCustomClass(customClass);
                 track.setWaveOutlineColor(waveOutlineColor);
-                //track.setPeaksContent(peaksSrc);
+                track.setDuration(duration);
                 console.log("end setup track");
 
                 if (fadeIn !== undefined) {
@@ -9382,7 +9395,7 @@ class AnnotationList {
                     this.soloTrack(track);
                 }
 
-                console.log("BEM setto peaks per index:" +index);
+                console.log("BEM setto peaks per index:" +index + " con duration:"+track.getDuration());
                 console.log(peaksInfo);
                 track.setPeaks(peaksInfo[index].peaks);
                 console.log(track);
@@ -9492,9 +9505,8 @@ class AnnotationList {
           this.adjustDuration();
           console.log("BEM start render loadPromises - " + new Date().toLocaleString());
           console.log(this);
-          this.draw(this.render());
           console.log("BEM end render - " + new Date().toLocaleString());
-
+          console.log(this.tracks);
         this.ee.emit("audiosourcesrendered");
       })
       .catch((e) => {
