@@ -14,6 +14,9 @@
     <button type="button" id="btn-pause" title="Pause">
         <i class="fas fa-pause"></i>
     </button>
+    <button type="button" id="btn-stop" title="Stop">
+        <i class="fas fa-stop"></i>
+    </button>
     <div id="playlist"></div>
     <div id="audioFiles"></div>
     <script src="../../waveform-playlist.js"></script>
@@ -26,23 +29,45 @@
 
         playlist.load([
             {
-                src: "hello2.mp3",
-                peaksSrc: "hello2.json"
+                src: "medium.wav",
+                peaksSrc: "medium.json"
             },
             {
-                src: "medium.wav"
-                //src: "hello.mp3"
+                //src: "medium.wav"
+                src: "hello.mp3"
             }
-        ]).then(function () {
-            var ee = playlist.getEventEmitter();
-            document.getElementById("btn-play").addEventListener("click", function () {
-                ee.emit("play");
-            });
+        ]);/*.then(function () {
+                    var ee = playlist.getEventEmitter();
+                    document.getElementById("btn-play").addEventListener("click", function () {
+                        console.log("BEM clicco play");
+                        ee.emit("play");
+                    });
 
-            document.getElementById("btn-pause").addEventListener("click", function () {
-                ee.emit("pause");
-            });
+                    document.getElementById("btn-pause").addEventListener("click", function () {
+                        ee.emit("pause");
+                    });
+                });*/
+
+
+
+
+        var ee = playlist.getEventEmitter();
+        document.getElementById("btn-play").addEventListener("click", function () {
+            console.log("BEM clicco play");
+            ee.emit("play");
         });
+
+        document.getElementById("btn-pause").addEventListener("click", function () {
+            console.log("BEM clicco pausa");
+            ee.emit("pause");
+        });
+
+        document.getElementById("btn-stop").addEventListener("click", function () {
+            console.log("BEM clicco stop");
+            ee.emit("stop");
+        });
+
+
     </script>
     <div id="prerendered_waveforms"></div>
 </body>

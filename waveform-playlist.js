@@ -5936,7 +5936,7 @@ module.exports = function (
     for (c = 0; c < numChan; c++) {
         channel = source.getChannelData(c);
         slice = channel.subarray(cueIn, cueOut);
-        console.log("BEM peaks che arrivano:" + this.peaksContent);
+        //console.log("BEM peaks che arrivano:" + this.peaksContent);
         console.log("BEM peaks calcolati:" + extractPeaks(slice, samplesPerPixel, bits) );
       if(peaksContent == null)
             peaksContent = extractPeaks(slice, samplesPerPixel, bits);
@@ -5946,7 +5946,7 @@ module.exports = function (
         console.log("BEM else");
         if (peaksContent == null)
             peaksContent = extractPeaks(source.subarray(cueIn, cueOut), samplesPerPixel, bits);
-        console.log("BEM peaksContent:" + peaksContent);
+        //console.log("BEM peaksContent:" + peaksContent);
         peaks.push(peaksContent);
   }
 
@@ -6330,13 +6330,19 @@ class IdentityLoader extends Loader {
             return new Promise((resolve, reject) => {
                 console.log("BEM FILELOAD RESOLVE:" + new Date().toLocaleString());
                 var myResult = {};
-                myResult.peaks = waveformData;
-                myResult.peaks.data[0] = new Int16Array(waveformData.data);
+                myResult.peaks = JSON.parse(JSON.stringify(waveformData));
+                console.log(waveformData.data[100] + " e length:" + waveformData.data.length);
+                console.log();
+
+                myResult.peaks.data = [];
+                myResult.peaks.data[0] = new Int16Array(waveformData.data.values()); 
+
+
                 console.log(waveformData);
+                console.log(myResult);
                 this.setStateChange(WAVEFORM_STATE_FINISHED);
                 if (waveformData == undefined || waveformData.data == undefined)
                     resolve(undefined);
-                    //BEM reject("Error while decoding data in peaks file");
                 else
                     resolve(myResult);
             });
@@ -6376,7 +6382,6 @@ class IdentityLoader extends Loader {
                             var element = document.createElement("audio");
                             element.className = "audio";
                             element.setAttribute("preload", "metadata");
-                            element.setAttribute("controls", "controls"); //BEM togliere controllo
                             var source = document.createElement("source");
                             source.setAttribute("src", this.trackInfo.src);
                             source.setAttribute("type", "audio/mpeg");
@@ -7306,29 +7311,6 @@ const MAX_CANVAS_WIDTH = 1000;
 
   setWaveOutlineColor(color) {
     this.waveOutlineColor = color;
-    }
-
-    setPeaksContent(content) {
-        console.log("BEM content:" + content);
-        /*this.getJSON(peaksSrc,
-            function (err, result) {
-                if (err !== null) {
-                    alert('Something went wrong: ' + err);
-                } else {
-                    console.log(result.data);
-                }
-            });
-        */
-        this.peaksContent = content;
-        //this.peaksContent = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,-1,0,-4,2,-4,5,-44,6,-333,232,-339,310,-486,631,-769,576,-497,768,-683,457,-742,201,-256,1251,-1712,1006,-2489,5045,-1398,4756,-3353,-257,-3110,7745,-2502,2239,-3208,1482,-3853,10052,-4026,3383,-4995,2290,-3302,8299,-4471,1817,-3660,-260,-3681,9384,-6287,2941,-3325,338,-3271,8718,-5779,2169,-2957,752,-2808,8677,-5197,3971,-1369,1736,-2428,5249,-5054,7809,-1478,1708,-3026,1311,-5393,9282,-3302,2333,-2417,2253,-2783,11055,-6762,9592,-5649,4077,-2933,354,-6534,14639,-7560,5688,-3262,2542,-3293,13962,-6679,8298,-6460,5871,-4298,1039,-3452,14993,-7711,7917,-3694,4280,-4708,978,-1518,13967,-6769,6018,-4725,4712,-4687,1247,-1971,12241,-5879,5683,-3971,2750,-3103,1114,-1156,11729,-5413,5308,-3372,3565,-3742,1774,-963,9606,-4410,4513,-2508,3010,-2856,2382,-1226,8849,-3836,5358,-2945,1968,-1820,682,-1377,6957,-2720,5986,-2788,2644,-2539,313,-882,6243,-2430,6085,-3195,1886,-1877,1584,-1652,1230,-1694,6001,-2175,1050,-1372,711,-1489,821,-2286,5255,-2362,1296,-663,1171,-1531,16,-174,4554,-2005,1142,-1983,827,-1445,-117,-864,3287,-1995,3562,-1699,1064,-1380,1038,-1330,942,-363,3209,-1718,390,-1458,811,-1266,646,-635,2840,-1628,3136,-1192,728,-1222,49,-818,990,-802,2518,-965,-80,-1006,418,-894,562,-98,2637,-848,1452,-730,385,-727,-326,-418,663,-610,2113,-821,108,-665,171,-527,340,105,1407,-557,785,-564,-165,-511,122,131,400,-17,457,-7,11,-3,4,-1,0,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-        //BEM this doesn't work. TODO: Load json from url
-         /* header("Access-Control-Allow-Origin: *");
-        fetch('https://drive.google.com/file/d/1NCScuv4D3kO7BB6j6TjYwjy-qCkluu6G/view?usp=sharing')
-            .then(res => res.json())
-            .then((out) => {
-                console.log('BEM Output: ', out);
-            }).catch(err => console.error(err));*/
-        console.log("BEM end setPeaksContent");
     }
 
     setCues(cueIn, cueOut) {
@@ -9419,7 +9401,7 @@ class AnnotationList {
     });
 
     ee.on("pause", () => {
-      this.pause();
+        this.pause();
     });
 
     ee.on("stop", () => {
@@ -9728,7 +9710,6 @@ class AnnotationList {
           track.setCues(cueIn, cueOut);
           track.setCustomClass(customClass);
           track.setWaveOutlineColor(waveOutlineColor);
-          //track.setPeaksContent(peaksSrc);
           console.log("end setup track");
 
           if (fadeIn !== undefined) {
@@ -9774,6 +9755,7 @@ class AnnotationList {
 
         this.tracks = this.tracks.concat(tracks);
           this.adjustDuration();
+          this.draw(this.render());
           console.log("BEM start render loadPromises - " + new Date().toLocaleString());
           console.log(this);
           console.log("BEM end render - " + new Date().toLocaleString());
@@ -10103,7 +10085,8 @@ class AnnotationList {
     return Promise.all(this.playoutPromises);
   }
 
-  pause() {
+    pause() {
+        console.log("BEM pause event");
     if (!this.isPlaying()) {
       return Promise.all(this.playoutPromises);
     }
@@ -10112,7 +10095,8 @@ class AnnotationList {
     return this.playbackReset();
   }
 
-  stop() {
+    stop() {
+        console.log("BEM stop event");
     if (this.mediaRecorder && this.mediaRecorder.state === "recording") {
       this.mediaRecorder.stop();
     }
