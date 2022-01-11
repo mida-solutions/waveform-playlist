@@ -6152,7 +6152,9 @@ const STATE_FINISHED = 3;
     this.src = src;
     this.ac = audioContext;
     this.audioRequestState = STATE_UNINITIALIZED;
-    this.ee = ee;
+      this.ee = ee;
+      console.log("BEM costruzione default loader ee:");
+      console.log(ee);
     }
 
   setStateChange(state) {
@@ -6296,14 +6298,17 @@ class IdentityLoader extends Loader {
 
 
     const WaveformLoader = (class {
-        constructor(trackInfo, ee = event_emitter_default()()) {
+        constructor(trackInfo, ee) {
             this.trackInfo = trackInfo;
             this.ee = ee;
             this.waveformRequestState = WAVEFORM_STATE_UNINITIALIZED;
+            console.log("BEM costruzion waveformloader ee:");
+            console.log(ee);
         }
 
         setStateChange(state) {
             this.waveformRequestState = state;
+            this.ee.emit("audiorequeststatechange", this.audioRequestState, this.src);
         }
 
         fileProgress(e) {
@@ -7523,6 +7528,117 @@ const MAX_CANVAS_WIDTH = 1000;
     this.playout.setStereoPanValue(value);
   }
 
+    /*
+    startTime, endTime in seconds (float).
+    segment is for a highlighted section in the UI.
+
+    returns a Promise that will resolve when the AudioBufferSource
+    is either stopped or plays out naturally.
+  */
+    schedulePrerenderedPlay(now, startTime, endTime, config) {
+        console.log("BEM schedulePrerenderedPlay - now:" + now + ", startTime:" + startTime + ", endTime:" + endTime);
+        console.log(config);
+        console.log(this);
+        let start;
+        let duration;
+        let when = now;
+        let segment = endTime ? endTime - startTime : undefined;
+
+        const defaultOptions = {
+            shouldPlay: true,
+            masterGain: 1,
+            isOffline: false,
+        };
+
+        const options = lodash_assign_default()({}, defaultOptions, config);
+        const playoutSystem = this.prerenderedPlayout;
+
+        // 1) track has no content to play.
+        // 2) track does not play in this selection.
+        if (
+            this.endTime <= startTime ||
+            (segment && startTime + segment < this.startTime)
+        ) {
+            // return a resolved promise since this track is technically "stopped".
+            return Promise.resolve();
+        }
+
+        // track should have something to play if it gets here.
+
+        // the track starts in the future or on the cursor position
+        if (this.startTime >= startTime) {
+            start = 0;
+            // schedule additional delay for this audio node.
+            when += this.startTime - startTime;
+            if (endTime) {
+                segment -= this.startTime - startTime;
+                duration = Math.min(segment, this.duration);
+            } else {
+                duration = this.duration;
+            }
+        } else {
+            start = startTime - this.startTime;
+            if (endTime) {
+                duration = Math.min(segment, this.duration - start);
+            } else {
+                duration = this.duration - start;
+            }
+        }
+
+        start += this.cueIn;
+        const relPos = startTime - this.startTime;
+        const sourcePromise = playoutSystem.setUpSource();
+
+        // param relPos: cursor position in seconds relative to this track.
+        // can be negative if the cursor is placed before the start of this track etc.
+        lodash_forown_default()(this.fades, (fade) => {
+            let fadeStart;
+            let fadeDuration;
+
+            // only apply fade if it's ahead of the cursor.
+            if (relPos < fade.end) {
+                if (relPos <= fade.start) {
+                    fadeStart = now + (fade.start - relPos);
+                    fadeDuration = fade.end - fade.start;
+                } else if (relPos > fade.start && relPos < fade.end) {
+                    fadeStart = now - (relPos - fade.start);
+                    fadeDuration = fade.end - fade.start;
+                }
+
+                switch (fade.type) {
+                    case fade_maker/* FADEIN */.Y1: {
+                        playoutSystem.applyFadeIn(fadeStart, fadeDuration, fade.shape);
+                        break;
+                    }
+                    case fade_maker/* FADEOUT */.h7: {
+                        playoutSystem.applyFadeOut(fadeStart, fadeDuration, fade.shape);
+                        break;
+                    }
+                    default: {
+                        throw new Error("Invalid fade type saved on track.");
+                    }
+                }
+            }
+        });
+
+        playoutSystem.setVolumeGainLevel(this.gain);
+        playoutSystem.setShouldPlay(options.shouldPlay);
+        playoutSystem.setMasterGainLevel(options.masterGain);
+        //playoutSystem.setStereoPanValue(this.stereoPan);
+        console.log("BEM playoutSystem.play()");
+        console.log(playoutSystem);
+        playoutSystem.play(when, start, duration);
+
+        return sourcePromise;
+    }
+
+
+
+
+
+
+
+
   /*
     startTime, endTime in seconds (float).
     segment is for a highlighted section in the UI.
@@ -7622,7 +7738,8 @@ const MAX_CANVAS_WIDTH = 1000;
     playoutSystem.setShouldPlay(options.shouldPlay);
     playoutSystem.setMasterGainLevel(options.masterGain);
     playoutSystem.setStereoPanValue(this.stereoPan);
-    console.log("BEM playoutSystem.play()");
+        console.log("BEM playoutSystem.play()");
+        console.log(playoutSystem);
     playoutSystem.play(when, start, duration);
 
     return sourcePromise;
@@ -7797,8 +7914,6 @@ const MAX_CANVAS_WIDTH = 1000;
   }
 
     render(data) {
-        console.log("BEM loggo render");
-        console.log(this.peaks);
     const width = this.peaks.length;
     const playbackX = secondsToPixels(
       data.playbackSeconds,
@@ -8054,7 +8169,159 @@ const MAX_CANVAS_WIDTH = 1000;
 
     return info;
   }
-});
+    });
+
+
+
+
+    /* harmony default export */ const PrerenderedPlayout = (class {
+        constructor(index) {
+            this.gain = 1;
+            this.audio = document.getElementById("prerendered_waveforms").children.item(index);
+        }
+
+
+        //applyFade(type, start, duration, shape = "logarithmic") {
+        //    if (type === fade_maker/* FADEIN */.Y1) {
+        //        (0, fade_maker/* createFadeIn */.L7)(this.fadeGain.gain, shape, start, duration);
+        //    } else if (type === fade_maker/* FADEOUT */.h7) {
+        //        (0, fade_maker/* createFadeOut */.Mt)(this.fadeGain.gain, shape, start, duration);
+        //    } else {
+        //        throw new Error("Unsupported fade type");
+        //    }
+        //}
+
+        //applyFadeIn(start, duration, shape = "logarithmic") {
+        //    this.applyFade(fade_maker/* FADEIN */.Y1, start, duration, shape);
+        //}
+
+        //applyFadeOut(start, duration, shape = "logarithmic") {
+        //    this.applyFade(fade_maker/* FADEOUT */.h7, start, duration, shape);
+        //}
+
+        isPlaying() {
+            return this.source !== undefined;
+        }
+
+        getDuration() {
+            return this.buffer.duration;
+        }
+
+        setAudioContext(ac) {
+            this.ac = ac;
+            this.ac.createStereoPanner = ac.createStereoPanner || ac.createPanner;
+            this.destination = this.ac.destination;
+        }
+
+        setUpSource() {
+            //this.source = this.ac.createBufferSource();
+            //this.source.buffer = this.buffer;
+
+            const sourcePromise = new Promise((resolve) => {
+                 //keep track of the buffer state.
+                //this.source.onended = () => {
+                //    //this.source.disconnect();
+                //    //this.fadeGain.disconnect();
+                //    this.volumeGain.disconnect();
+                //    //this.shouldPlayGain.disconnect();
+                //    //this.panner.disconnect();
+                //    this.masterGain.disconnect();
+
+                //    //this.source = undefined;
+                //    //this.fadeGain = undefined;
+                //    this.volumeGain = undefined;
+                //    //this.shouldPlayGain = undefined;
+                //    //this.panner = undefined;
+                //    this.masterGain = undefined;
+
+                    resolve();
+                //};
+            });
+
+            //this.fadeGain = this.ac.createGain();
+            // used for track volume slider
+            //this.volumeGain = this.ac.createGain();
+            // used for solo/mute
+            //this.shouldPlayGain = this.ac.createGain();
+            //this.masterGain = this.ac.createGain();
+
+            //this.panner = this.ac.createStereoPanner();
+
+            //this.source.connect(this.fadeGain);
+            //this.fadeGain.connect(this.volumeGain);
+            //this.volumeGain.connect(this.shouldPlayGain);
+            //this.shouldPlayGain.connect(this.masterGain);
+            //this.masterGain.connect(this.panner);
+            //this.panner.connect(this.destination);
+
+            return sourcePromise;
+        }
+
+        setVolumeGainLevel(level) {
+            if (this.volumeGain) {
+                this.volumeGain.gain.value = level;
+            }
+        }
+
+        setShouldPlay(bool) {
+            if (this.shouldPlayGain) {
+                this.shouldPlayGain.gain.value = bool ? 1 : 0;
+            }
+        }
+
+        setMasterGainLevel(level) {
+            if (this.masterGain) {
+                this.masterGain.gain.value = level;
+            }
+        }
+
+        setStereoPanValue(value) {
+            const pan = value === undefined ? 0 : value;
+
+            if (this.panner) {
+                if (this.panner.pan !== undefined) {
+                    this.panner.pan.value = pan;
+                } else {
+                    this.panner.panningModel = "equalpower";
+                    this.panner.setPosition(pan, 0, 1 - Math.abs(pan));
+                }
+            }
+        }
+
+        /*
+          source.start is picky when passing the end time.
+          If rounding error causes a number to make the source think
+          it is playing slightly more samples than it has it won't play at all.
+          Unfortunately it doesn't seem to work if you just give it a start time.
+        */
+        play(when, start, duration) {
+            console.log("BEM print prerenderedplay info:");
+            console.log("BEM when:" + when + " ,start:" + start + " ,duration:" + duration);
+            console.log(this);
+            if (this.audio) {
+                console.log("BEM play prerenderedaudio start! con when:"+when+" e start:"+start);
+                this.audio.currentTime = start;
+                this.audio.play();
+            } else {
+                console.Error("Error: No audio to start!");
+            }
+            //this.source.start(when, start, duration);
+        }
+
+        stop(when = 0) {
+            if (this.audio) {
+                console.log("BEM stop prerenderedaudio start!");
+                this.audio.pause();
+            } else {
+                console.Error("Error: No audio to stop!");
+            }
+        }
+    });
+
+
+
+
+
 
 ;// CONCATENATED MODULE: ./src/Playout.js
 
@@ -8184,6 +8451,7 @@ const MAX_CANVAS_WIDTH = 1000;
     play(when, start, duration) {
         console.log("BEM print play info:");
         console.log("BEM when:" + when + " ,start:" + start + " ,duration:" + duration);
+        console.log(this);
     this.source.start(when, start, duration);
   }
 
@@ -9100,6 +9368,7 @@ class AnnotationList {
   }
 
   setUpEventEmitter() {
+        console.log("BEM start setup eventemitter");
     const ee = this.ee;
 
     ee.on("automaticscroll", (val) => {
@@ -9145,7 +9414,8 @@ class AnnotationList {
 
       ee.on("play", (start, end) => {
           console.log("BEM ee.play");
-      this.play(start, end);
+          this.play(start, end);
+          console.log("BEM after ee.play");
     });
 
     ee.on("pause", () => {
@@ -9275,6 +9545,7 @@ class AnnotationList {
         this.isScrolling = false;
       }, 200);
     });
+      console.log("BEM end setup eventemitter");
   }
 
     //BEM foreach track of the tracklist, loads the audio. Return a Promise with audioBuffer object inside
@@ -9348,7 +9619,7 @@ class AnnotationList {
                 const audioBuffer = new AudioBuffer({ duration: duration, length: info.peaks.length, numberOfChannels: info.peaks.channels, sampleRate: info.peaks.sample_rate});
 
                 // webaudio specific playout for now.
-                const playout = new Playout(this.ac, audioBuffer);
+                const playout = new PrerenderedPlayout(index);
 
                 const track = new Track();
                 track.src = prerenderedTrack.src;
@@ -9731,7 +10002,7 @@ class AnnotationList {
         shouldPlay = false;
       }
     }
-
+      console.log("BEM track:"+track.src+" should play?"+shouldPlay);
     return shouldPlay;
   }
 
@@ -9759,7 +10030,8 @@ class AnnotationList {
     this.ee.emit("mastervolumechange", gain);
   }
 
-  restartPlayFrom(start, end) {
+    restartPlayFrom(start, end) {
+        console.log("BEM restartPlayFrom");
     this.stopAnimation();
 
     this.tracks.forEach((editor) => {
@@ -9773,6 +10045,7 @@ class AnnotationList {
 
     play(startTime, endTime) {
         console.log("BEM play event");
+        console.log(this.tracks);
     clearTimeout(this.resetDrawTimer);
 
         console.log("BEM play event2");
@@ -9797,16 +10070,25 @@ class AnnotationList {
         }
         console.log("BEM play event6");
 
-    this.tracks.forEach((track) => {
-      console.log("BEM play event6.1");
-      track.setState("cursor");
-        console.log("BEM play event6.2");
-      playoutPromises.push(
-        track.schedulePlay(currentTime, start, end, {
-          shouldPlay: this.shouldTrackPlay(track),
-          masterGain: this.masterGain,
-        })
-        );
+        this.tracks.forEach((track) => {
+            console.log("BEM play event6.1");
+            track.setState("cursor");
+            console.log("BEM play event6.2");
+            if (!track.peaksSrc) {
+                playoutPromises.push(
+                    track.schedulePlay(currentTime, start, end, {
+                        shouldPlay: this.shouldTrackPlay(track),
+                        masterGain: this.masterGain,
+                    })
+                );
+            } else {
+                playoutPromises.push(
+                    track.schedulePrerenderedPlay(currentTime, start, end, {
+                        shouldPlay: this.shouldTrackPlay(track),
+                        masterGain: this.masterGain,
+                    })
+                );
+            }
         console.log("BEM play event6.3");
     });
         console.log("BEM play event7");
@@ -9814,7 +10096,7 @@ class AnnotationList {
     this.lastPlay = currentTime;
     // use these to track when the playlist has fully stopped.
     this.playoutPromises = playoutPromises;
-    console.log("BEM play event8");
+        console.log("BEM play event8");
     this.startAnimation(start);
 
         console.log("BEM play event9");
