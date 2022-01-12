@@ -8182,7 +8182,7 @@ const MAX_CANVAS_WIDTH = 1000;
         //}
 
         isPlaying() {
-            return this.source !== undefined;
+            return !this.audio.paused;
         }
 
         getDuration() {
