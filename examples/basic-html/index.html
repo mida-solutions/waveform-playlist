@@ -23,19 +23,46 @@
     <script>
         var playlist = WaveformPlaylist.init({
             container: document.getElementById("playlist"),
-            samplesPerPixel: 128,
-            zoomLevels: [128, 256, 512]
+            samplesPerPixel: 256,
+            zoomLevels: [128, 256, 512],
+            controls: {
+                show: true,
+                width: 100
+            },
         });
 
         playlist.load([
+            /*{
+                src: "imbarazzo.wav"
+            },*/
             {
+                src: "imbarazzo.wav",
+                peaksSrc: "imbarazzo_aw_48000.json"
+            }, {
+                src: "imbarazzo.wav",
+                
+            },/*
+            {
+                src: "brc.wav"
+            },
+            {
+                src: "brc.wav",
+                peaksSrc: "brc.json"
+            }*/
+            /*{
                 src: "medium.wav",
                 peaksSrc: "medium.json"
             },
             {
+                src: "medium.wav"
+                //src: "hello.mp3",
+                //peaksSrc: "hello.json"
+            },
+            {
                 //src: "medium.wav"
-                src: "hello.mp3"
-            }
+                src: "hello2.mp3",
+                peaksSrc: "hello2.json"
+            }*/
         ]);/*.then(function () {
                     var ee = playlist.getEventEmitter();
                     document.getElementById("btn-play").addEventListener("click", function () {

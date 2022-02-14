@@ -5808,7 +5808,9 @@ function convert(n, bits) {
  * @param {TypedArray} channel - Audio track frames to calculate peaks from.
  * @param {Number} samplesPerPixel - Audio frames per peak
  */
-function extractPeaks(channel, samplesPerPixel, bits) {
+        function extractPeaks(channel, samplesPerPixel, bits) {
+            console.log("extractPeaks samplesPerPixel:" + samplesPerPixel);
+            console.log("extractPeaks channel.length:" + channel.length);
   var i;
   var chanLength = channel.length;
   var numPeaks = Math.ceil(chanLength / samplesPerPixel);
@@ -5820,14 +5822,22 @@ function extractPeaks(channel, samplesPerPixel, bits) {
   var extrema;
 
   //create interleaved array of min,max
-  var peaks = makeTypedArray(bits, numPeaks * 2);
+            var peaks = makeTypedArray(bits, numPeaks * 2);
+                console.log("BEM chanLength:" + chanLength);
+            console.log("BEM numPeaks:" + numPeaks);
+            console.log("BEM samplesPerPixel:" + samplesPerPixel);
 
   for (i = 0; i < numPeaks; i++) {
     start = i * samplesPerPixel;
     end =
       (i + 1) * samplesPerPixel > chanLength
         ? chanLength
-        : (i + 1) * samplesPerPixel;
+              : (i + 1) * samplesPerPixel;
+
+
+
+      console.log("BEM start:" + start);
+      console.log("BEM end:" + end);
 
     segment = channel.subarray(start, end);
     extrema = findMinMax(segment);
@@ -5936,8 +5946,14 @@ module.exports = function (
     for (c = 0; c < numChan; c++) {
         channel = source.getChannelData(c);
         slice = channel.subarray(cueIn, cueOut);
+        console.log("BEM channel length:"+channel.length);
+        console.log("BEM slice length:" +slice.length);
         //console.log("BEM peaks che arrivano:" + this.peaksContent);
         console.log("BEM peaks calcolati:" + extractPeaks(slice, samplesPerPixel, bits) );
+        console.log("BEM calcolo peaks:");
+        console.log(slice);
+        console.log("samplesPerPixel=" + samplesPerPixel);
+        console.log("bits=" + bits);
       if(peaksContent == null)
             peaksContent = extractPeaks(slice, samplesPerPixel, bits);
       peaks.push(peaksContent);
@@ -6181,10 +6197,12 @@ const STATE_FINISHED = 3;
 
     this.setStateChange(STATE_DECODING);
 
-    return new Promise((resolve, reject) => {
+      return new Promise((resolve, reject) => {
+
       this.ac.decodeAudioData(
         audioData,
           (audioBuffer) => {
+              console.log(audioBuffer);
               console.log("BEM decodeAudioData -" + new Date().toLocaleString());
               this.audioBuffer = audioBuffer;
               this.setStateChange(STATE_FINISHED);
@@ -6272,11 +6290,13 @@ class IdentityLoader extends Loader {
       });
 
       xhr.addEventListener("load", (e) => {
-        const decoderPromise = super.fileLoad(e);
+          const decoderPromise = super.fileLoad(e);
+
 
         decoderPromise
             .then((audioBuffer) => {
                 console.log("BEM resolve audioBuffer - " + new Date().toLocaleString());
+                console.log(audioBuffer);
                 resolve(audioBuffer);
           })
           .catch(reject);
@@ -6330,12 +6350,23 @@ class IdentityLoader extends Loader {
             return new Promise((resolve, reject) => {
                 console.log("BEM FILELOAD RESOLVE:" + new Date().toLocaleString());
                 var myResult = {};
+                var myMultiplier = 48000 / waveformData.sample_rate;
+                console.log("BEM myMultiplier:" + myMultiplier);
                 myResult.peaks = JSON.parse(JSON.stringify(waveformData));
                 console.log(waveformData.data[100] + " e length:" + waveformData.data.length);
                 console.log();
 
+                var zigio = [];
+                for (var i = 0; i < waveformData.data.length; i++) {
+                    for (var j = i * myMultiplier; j < (i+1)*myMultiplier; j++) {
+                        zigio[j] = waveformData.data[i];
+                   }
+                }
                 myResult.peaks.data = [];
-                myResult.peaks.data[0] = new Int16Array(waveformData.data.values()); 
+                myResult.peaks.data[0] = new Int16Array(zigio.values());
+                myResult.peaks.length = myMultiplier * waveformData.data.length;
+//                myResult.peaks.data = [];
+//                myResult.peaks.data[0] = new Int16Array(waveformData.data.values()); 
 
 
                 console.log(waveformData);
@@ -7434,7 +7465,7 @@ const MAX_CANVAS_WIDTH = 1000;
     this.peakData = data;
   }
 
-  calculatePeaks(samplesPerPixel, sampleRate) {
+    calculatePeaks(samplesPerPixel, sampleRate) {
       const cueIn = secondsToSamples(this.cueIn, sampleRate);
       const cueOut = secondsToSamples(this.cueOut, sampleRate);
       const bits = undefined;
@@ -9428,7 +9459,8 @@ class AnnotationList {
       this.drawRequest();
     });
 
-    ee.on("mute", (track) => {
+      ee.on("mute", (track) => {
+
       this.muteTrack(track);
       this.adjustTrackPlayout();
       this.drawRequest();
