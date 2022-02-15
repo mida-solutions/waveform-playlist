@@ -8160,12 +8160,14 @@ const MAX_CANVAS_WIDTH = 1000;
             console.log("BEM prerendered layout setVolumeGainLevel()");
             if (level>=0 && level<=1) {
                 this.volumeGain = level;
+                this.audio.volume = level
             }
         }
 
         setShouldPlay(bool) {
             console.log("BEM prerendered layout setShouldPlay():"+bool);
             this.shouldPlay = bool;
+            this.audio.muted = !bool;
         }
 
         setMasterGainLevel(level) {
@@ -9906,7 +9908,7 @@ class AnnotationList {
         shouldPlay = false;
       }
     }
-      console.log("BEM track:"+track.src+" should play?"+shouldPlay);
+      //console.log("BEM track:"+track.src+" should play?"+shouldPlay);
     return shouldPlay;
   }
 
