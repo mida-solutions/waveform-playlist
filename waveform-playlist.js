@@ -5834,11 +5834,6 @@ function convert(n, bits) {
         ? chanLength
               : (i + 1) * samplesPerPixel;
 
-
-
-      console.log("BEM start:" + start);
-      console.log("BEM end:" + end);
-
     segment = channel.subarray(start, end);
     extrema = findMinMax(segment);
     min = convert(extrema.min, bits);
@@ -7540,118 +7535,7 @@ const MAX_CANVAS_WIDTH = 1000;
     this.stereoPan = value;
     this.playout.setStereoPanValue(value);
   }
-
-    /*
-    startTime, endTime in seconds (float).
-    segment is for a highlighted section in the UI.
-
-    returns a Promise that will resolve when the AudioBufferSource
-    is either stopped or plays out naturally.
-  */
-    schedulePrerenderedPlay(now, startTime, endTime, config) {
-        console.log("BEM schedulePrerenderedPlay - now:" + now + ", startTime:" + startTime + ", endTime:" + endTime);
-        console.log(config);
-        console.log(this);
-        let start;
-        let duration;
-        let when = now;
-        let segment = endTime ? endTime - startTime : undefined;
-
-        const defaultOptions = {
-            shouldPlay: true,
-            masterGain: 1,
-            isOffline: false,
-        };
-
-        const options = lodash_assign_default()({}, defaultOptions, config);
-        const playoutSystem = this.prerenderedPlayout;
-
-        // 1) track has no content to play.
-        // 2) track does not play in this selection.
-        if (
-            this.endTime <= startTime ||
-            (segment && startTime + segment < this.startTime)
-        ) {
-            // return a resolved promise since this track is technically "stopped".
-            return Promise.resolve();
-        }
-
-        // track should have something to play if it gets here.
-
-        // the track starts in the future or on the cursor position
-        if (this.startTime >= startTime) {
-            start = 0;
-            // schedule additional delay for this audio node.
-            when += this.startTime - startTime;
-            if (endTime) {
-                segment -= this.startTime - startTime;
-                duration = Math.min(segment, this.duration);
-            } else {
-                duration = this.duration;
-            }
-        } else {
-            start = startTime - this.startTime;
-            if (endTime) {
-                duration = Math.min(segment, this.duration - start);
-            } else {
-                duration = this.duration - start;
-            }
-        }
-
-        start += this.cueIn;
-        const relPos = startTime - this.startTime;
-        const sourcePromise = playoutSystem.setUpSource();
-
-        // param relPos: cursor position in seconds relative to this track.
-        // can be negative if the cursor is placed before the start of this track etc.
-        lodash_forown_default()(this.fades, (fade) => {
-            let fadeStart;
-            let fadeDuration;
-
-            // only apply fade if it's ahead of the cursor.
-            if (relPos < fade.end) {
-                if (relPos <= fade.start) {
-                    fadeStart = now + (fade.start - relPos);
-                    fadeDuration = fade.end - fade.start;
-                } else if (relPos > fade.start && relPos < fade.end) {
-                    fadeStart = now - (relPos - fade.start);
-                    fadeDuration = fade.end - fade.start;
-                }
-
-                switch (fade.type) {
-                    case fade_maker/* FADEIN */.Y1: {
-                        playoutSystem.applyFadeIn(fadeStart, fadeDuration, fade.shape);
-                        break;
-                    }
-                    case fade_maker/* FADEOUT */.h7: {
-                        playoutSystem.applyFadeOut(fadeStart, fadeDuration, fade.shape);
-                        break;
-                    }
-                    default: {
-                        throw new Error("Invalid fade type saved on track.");
-                    }
-                }
-            }
-        });
-
-        playoutSystem.setVolumeGainLevel(this.gain);
-        playoutSystem.setShouldPlay(options.shouldPlay);
-        playoutSystem.setMasterGainLevel(options.masterGain);
-        //playoutSystem.setStereoPanValue(this.stereoPan);
-        console.log("BEM playoutSystem.play()");
-        console.log(playoutSystem);
-        playoutSystem.play(when, start, duration);
-
-        return sourcePromise;
-    }
-
-
-
-
-
-
-
-
+ 
   /*
     startTime, endTime in seconds (float).
     segment is for a highlighted section in the UI.
@@ -8191,6 +8075,8 @@ const MAX_CANVAS_WIDTH = 1000;
         constructor(index) {
             this.gain = 1;
             this.audio = document.getElementById("prerendered_waveforms").children.item(index);
+            this.shouldPlay = true;
+            this.volumeGain = 1;
         }
 
 
@@ -8271,15 +8157,15 @@ const MAX_CANVAS_WIDTH = 1000;
         }
 
         setVolumeGainLevel(level) {
-            if (this.volumeGain) {
-                this.volumeGain.gain.value = level;
+            console.log("BEM prerendered layout setVolumeGainLevel()");
+            if (level>=0 && level<=1) {
+                this.volumeGain = level;
             }
         }
 
         setShouldPlay(bool) {
-            if (this.shouldPlayGain) {
-                this.shouldPlayGain.gain.value = bool ? 1 : 0;
-            }
+            console.log("BEM prerendered layout setShouldPlay():"+bool);
+            this.shouldPlay = bool;
         }
 
         setMasterGainLevel(level) {
@@ -8309,12 +8195,14 @@ const MAX_CANVAS_WIDTH = 1000;
         */
         play(when, start, duration) {
             console.log("BEM print prerenderedplay info:");
+            console.log("BEM shouldPlay?" + this.shouldPlay);
             console.log("BEM when:" + when + " ,start:" + start + " ,duration:" + duration);
             console.log(this);
             if (this.audio) {
                 console.log("BEM play prerenderedaudio start! con when:"+when+" e start:"+start);
                 this.audio.currentTime = start;
-                this.audio.play();
+                if (this.shouldPlay)
+                    this.audio.play();
             } else {
                 console.Error("Error: No audio to start!");
             }
@@ -9460,7 +9348,6 @@ class AnnotationList {
     });
 
       ee.on("mute", (track) => {
-
       this.muteTrack(track);
       this.adjustTrackPlayout();
       this.drawRequest();
@@ -9943,7 +9830,7 @@ class AnnotationList {
     } else {
       this.mutedTracks.push(track);
     }
-  }
+    }
 
   soloTrack(track) {
     const index = this.soloedTracks.indexOf(track);
@@ -9987,9 +9874,12 @@ class AnnotationList {
       }
     });
   }
-
-  adjustTrackPlayout() {
-    this.tracks.forEach((track) => {
+    
+    adjustTrackPlayout() {
+      console.log("BEM adjustTrackPlayout");
+      this.tracks.forEach((track) => {
+          console.log(track);
+          console.log("BEM questa traccia dovrebbe essere riprodotta? " + this.shouldTrackPlay(track));
       track.setShouldPlay(this.shouldTrackPlay(track));
     });
   }
@@ -10088,21 +9978,14 @@ class AnnotationList {
             console.log("BEM play event6.1");
             track.setState("cursor");
             console.log("BEM play event6.2");
-            if (!track.peaksSrc) {
-                playoutPromises.push(
-                    track.schedulePlay(currentTime, start, end, {
-                        shouldPlay: this.shouldTrackPlay(track),
-                        masterGain: this.masterGain,
-                    })
-                );
-            } else {
-                playoutPromises.push(
-                    track.schedulePrerenderedPlay(currentTime, start, end, {
-                        shouldPlay: this.shouldTrackPlay(track),
-                        masterGain: this.masterGain,
-                    })
-                );
-            }
+            console.log(track);
+            console.log("BEM play event6.2.1");
+            playoutPromises.push(
+                track.schedulePlay(currentTime, start, end, {
+                    shouldPlay: this.shouldTrackPlay(track),
+                    masterGain: this.masterGain,
+                })
+            );
         console.log("BEM play event6.3");
     });
         console.log("BEM play event7");
