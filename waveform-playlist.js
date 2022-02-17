@@ -6351,21 +6351,24 @@ class IdentityLoader extends Loader {
                 console.log(waveformData.data[100] + " e length:" + waveformData.data.length);
                 console.log();
 
-                var zigio = [];
+                var peaksData = [];
                 for (var i = 0; i < waveformData.data.length; i++) {
                     for (var j = i * myMultiplier; j < (i+1)*myMultiplier; j++) {
-                        zigio[j] = waveformData.data[i];
+                        peaksData[j] = waveformData.data[i];
                    }
                 }
                 myResult.peaks.data = [];
-                myResult.peaks.data[0] = new Int16Array(zigio.values());
+                myResult.peaks.data[0] = new Int16Array(peaksData.values());
                 myResult.peaks.length = myMultiplier * waveformData.data.length;
-//                myResult.peaks.data = [];
-//                myResult.peaks.data[0] = new Int16Array(waveformData.data.values()); 
 
+                for (const [key, value] of Object.entries(this.trackInfo)) {
+                    if (key != "src" && key != "peaksSrc")
+                        myResult[key] = value;
+                }
 
                 console.log(waveformData);
                 console.log(myResult);
+                console.log(this.trackInfo);
                 this.setStateChange(WAVEFORM_STATE_FINISHED);
                 if (waveformData == undefined || waveformData.data == undefined)
                     resolve(undefined);
@@ -7561,7 +7564,7 @@ const MAX_CANVAS_WIDTH = 1000;
     const options = lodash_assign_default()({}, defaultOptions, config);
     const playoutSystem = options.isOffline
       ? this.offlinePlayout
-      : this.playout;
+            : this.playout;
 
     // 1) track has no content to play.
     // 2) track does not play in this selection.
@@ -7576,7 +7579,8 @@ const MAX_CANVAS_WIDTH = 1000;
     // track should have something to play if it gets here.
 
     // the track starts in the future or on the cursor position
-    if (this.startTime >= startTime) {
+        if (this.startTime >= startTime) {
+            console.log("BEM this.startTime:" + this.startTime + " e startTime:" + startTime);
       start = 0;
       // schedule additional delay for this audio node.
       when += this.startTime - startTime;
@@ -7637,7 +7641,9 @@ const MAX_CANVAS_WIDTH = 1000;
     playoutSystem.setStereoPanValue(this.stereoPan);
         console.log("BEM playoutSystem.play()");
         console.log(playoutSystem);
-    playoutSystem.play(when, start, duration);
+        //TODO disabilita riproduzione se PrerenderedPlayout
+    if (!(playoutSystem instanceof PrerenderedPlayout ))
+       playoutSystem.play(when, start, duration);
 
     return sourcePromise;
   }
@@ -8203,8 +8209,7 @@ const MAX_CANVAS_WIDTH = 1000;
             if (this.audio) {
                 console.log("BEM play prerenderedaudio start! con when:"+when+" e start:"+start);
                 this.audio.currentTime = start;
-                if (this.shouldPlay)
-                    this.audio.play();
+                this.audio.play();
             } else {
                 console.Error("Error: No audio to start!");
             }
@@ -9126,7 +9131,8 @@ class AnnotationList {
     this.scrollTimer = undefined;
     this.showTimescale = false;
     // whether a user is scrolling the waveform
-    this.isScrolling = false;
+      this.isScrolling = false;
+    this.isPrerenderedPaused = true;
 
     this.fadeType = "logarithmic";
     this.masterGain = 1;
@@ -9315,17 +9321,20 @@ class AnnotationList {
       this.record();
     });
 
-      ee.on("play", (start, end) => {
+    ee.on("play", (start, end) => {
           console.log("BEM ee.play");
+          this.isPrerenderedPaused = false;
           this.play(start, end);
           console.log("BEM after ee.play");
     });
 
     ee.on("pause", () => {
+        this.isPrerenderedPaused = true;
         this.pause();
     });
 
     ee.on("stop", () => {
+      this.isPrerenderedPaused = true;
       this.stop();
     });
 
@@ -9882,7 +9891,7 @@ class AnnotationList {
       this.tracks.forEach((track) => {
           console.log(track);
           console.log("BEM questa traccia dovrebbe essere riprodotta? " + this.shouldTrackPlay(track));
-      track.setShouldPlay(this.shouldTrackPlay(track));
+          track.setShouldPlay(this.shouldTrackPlay(track));
     });
   }
 
@@ -9907,10 +9916,20 @@ class AnnotationList {
       if (this.mutedTracks.indexOf(track) > -1) {
         shouldPlay = false;
       }
-    }
-      //console.log("BEM track:"+track.src+" should play?"+shouldPlay);
+      }
     return shouldPlay;
   }
+
+    shouldPrerenderedTrackPlay(track) {
+        let shouldPlay = true;
+        if (track.playout instanceof PrerenderedPlayout && this.getCurrentTime() < track.startTime) {
+            console.log("BEM should play false because prerenderedplayout with delay");
+            shouldPlay = false;
+        }
+        console.log("BEM track:" + track.src + " should play?" + shouldPlay + " con currentTime:" + this.getCurrentTime());
+        console.log(track);
+        return shouldPlay;
+    }
 
   isPlaying() {
     return this.tracks.reduce(
@@ -9925,7 +9944,7 @@ class AnnotationList {
   getCurrentTime() {
     const cursorPos = this.lastSeeked || this.pausedAt || this.cursor;
 
-    return cursorPos + this.getElapsedTime();
+      return isNaN(cursorPos + this.getElapsedTime()) ? 0 : cursorPos + this.getElapsedTime();
   }
 
   getElapsedTime() {
@@ -10221,7 +10240,11 @@ class AnnotationList {
 
   renderTrackSection() {
     const trackElements = this.tracks.map((track) => {
-      const collapsed = this.collapsedTracks.indexOf(track) > -1;
+        const collapsed = this.collapsedTracks.indexOf(track) > -1;
+        if (track.playout instanceof PrerenderedPlayout && this.shouldPrerenderedTrackPlay(track) && !playlist.isPrerenderedPaused) {
+            console.log("BEM riproduco veramente traccia");
+            track.playout.play(track.startTime, this.getCurrentTime() - track.startTime, track.duration);
+          }
       return track.render(
         this.getTrackRenderData({
           isActive: this.isActiveTrack(track),
