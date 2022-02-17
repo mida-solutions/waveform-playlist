@@ -6470,7 +6470,8 @@ class IdentityLoader extends Loader {
   }
 
   hook(node) {
-    const playlist = this.playlist;
+      const playlist = this.playlist;
+      console.log("BEM hook");
     if (!playlist.isScrolling) {
       const el = node;
 
@@ -7517,7 +7518,8 @@ const MAX_CANVAS_WIDTH = 1000;
     this.duration = duration;
   }
 
-  isPlaying() {
+    isPlaying() {
+        console.log("BEM track isPlaying()");
     return this.playout.isPlaying();
   }
 
@@ -7641,10 +7643,10 @@ const MAX_CANVAS_WIDTH = 1000;
     playoutSystem.setStereoPanValue(this.stereoPan);
         console.log("BEM playoutSystem.play()");
         console.log(playoutSystem);
-        //TODO disabilita riproduzione se PrerenderedPlayout
     if (!(playoutSystem instanceof PrerenderedPlayout ))
        playoutSystem.play(when, start, duration);
 
+    return sourcePromise;
     return sourcePromise;
   }
 
@@ -7817,12 +7819,16 @@ const MAX_CANVAS_WIDTH = 1000;
   }
 
     render(data) {
+        console.log("BEM track render(data)");
     const width = this.peaks.length;
     const playbackX = secondsToPixels(
       data.playbackSeconds,
       data.resolution,
       data.sampleRate
-    );
+        );
+        console.log("BEM data.playbackSeconds:" + data.playbackSeconds);
+        console.log("BEM data.resolution:" + data.resolution);
+        console.log("BEM data.sampleRate:" + data.sampleRate);
     const startX = secondsToPixels(
       this.startTime,
       data.resolution,
@@ -7844,6 +7850,12 @@ const MAX_CANVAS_WIDTH = 1000;
         progressWidth = width;
       }
     }
+
+        console.log("BEM playbackX:" + playbackX);
+        console.log("BEM progressWidth:" + progressWidth);
+        console.log("BEM startX:" + startX);
+        console.log("BEM endX:" + endX);
+        console.log("BEM this.endTime:" + this.endTime);
 
     const waveformChildren = [
       h_default()("div.cursor", {
@@ -8083,6 +8095,7 @@ const MAX_CANVAS_WIDTH = 1000;
             this.audio = document.getElementById("prerendered_waveforms").children.item(index);
             this.shouldPlay = true;
             this.volumeGain = 1;
+            this.isPlaying = false;
         }
 
 
@@ -8105,6 +8118,8 @@ const MAX_CANVAS_WIDTH = 1000;
         //}
 
         isPlaying() {
+            console.log("bem playout isplaying()" + !this.audio.paused);
+            console.log(this.audio);
             return !this.audio.paused;
         }
 
@@ -8210,6 +8225,7 @@ const MAX_CANVAS_WIDTH = 1000;
                 console.log("BEM play prerenderedaudio start! con when:"+when+" e start:"+start);
                 this.audio.currentTime = start;
                 this.audio.play();
+                console.log("BEM avvio audio quindi è in pausa? :" + this.audio.paused);
             } else {
                 console.log("Error: No audio to start!");
             }
@@ -8221,7 +8237,7 @@ const MAX_CANVAS_WIDTH = 1000;
                 console.log("BEM stop prerenderedaudio start!");
                 this.audio.pause();
             } else {
-                console.Error("Error: No audio to stop!");
+                console.log("Error: No audio to stop!");
             }
         }
     });
@@ -9922,8 +9938,8 @@ class AnnotationList {
 
     shouldPrerenderedTrackPlay(track) {
         let shouldPlay = true;
-        if (track.playout instanceof PrerenderedPlayout && this.getCurrentTime() < track.startTime) {
-            console.log("BEM should play false because prerenderedplayout with delay");
+        if (track.playout instanceof PrerenderedPlayout && (this.getCurrentTime() < track.startTime || this.getCurrentTime() > (track.duration + track.startTime))) {
+            console.log("BEM should play false because prerenderedplayout with delay - this.getCurrentTime():" + this.getCurrentTime() + " track.startTime:" + track.startTime + "track.duration:"+track.duration);
             shouldPlay = false;
         }
         console.log("BEM track:" + track.src + " should play?" + shouldPlay + " con currentTime:" + this.getCurrentTime());
@@ -9942,9 +9958,14 @@ class AnnotationList {
    *   returns the current point of time in the playlist in seconds.
    */
   getCurrentTime() {
-    const cursorPos = this.lastSeeked || this.pausedAt || this.cursor;
+      const cursorPos = this.lastSeeked || this.pausedAt || this.cursor;
+      console.log("cursorPos:" + cursorPos);
+      console.log("this.lastSeeked:" + this.lastSeeked);
+      console.log("this.pausedAt:" + this.pausedAt);
+      console.log("this.cursor:" + this.cursor);
+      console.log("this.getElapsedTime():" + this.getElapsedTime());
 
-      return isNaN(cursorPos + this.getElapsedTime()) ? 0 : cursorPos + this.getElapsedTime();
+      return cursorPos + (isNaN(this.getElapsedTime()) ? 0 : this.getElapsedTime());
   }
 
   getElapsedTime() {
@@ -10144,7 +10165,9 @@ class AnnotationList {
     const cursorPos = cursor || this.cursor;
     const elapsed = currentTime - this.lastDraw;
 
-    if (this.isPlaying()) {
+      //BEM todo playlist qui fa il playing
+      if (this.isPlaying()) {
+          console.log("BEM updateEditor isPlaying true");
       const playbackSeconds = cursorPos + elapsed;
       this.ee.emit("timeupdate", playbackSeconds);
       this.animationRequest = window.requestAnimationFrame(() => {
@@ -10154,7 +10177,8 @@ class AnnotationList {
       this.playbackSeconds = playbackSeconds;
       this.draw(this.render());
       this.lastDraw = currentTime;
-    } else {
+      } else {
+          console.log("BEM updateEditor isPlaying false");
       if (
         cursorPos + elapsed >=
         (this.isSegmentSelection() ? selection.end : this.duration)
@@ -10242,9 +10266,8 @@ class AnnotationList {
     const trackElements = this.tracks.map((track) => {
         const collapsed = this.collapsedTracks.indexOf(track) > -1;
         if (track.playout instanceof PrerenderedPlayout && this.shouldPrerenderedTrackPlay(track) && !playlist.isPrerenderedPaused) {
-            console.log("BEM riproduco veramente traccia");
             track.playout.play(track.startTime, this.getCurrentTime() - track.startTime, track.duration);
-          }
+        }
       return track.render(
         this.getTrackRenderData({
           isActive: this.isActiveTrack(track),
@@ -10256,20 +10279,22 @@ class AnnotationList {
         })
       );
     });
-
+      console.log("dovrebbe ritornare per il hook");
     return h_default()(
       "div.playlist-tracks",
       {
         attributes: {
           style: "overflow: auto;",
-        },
+          },
         onscroll: (e) => {
+          console.log("BEM scrolling");
+          console.log(e);
           this.scrollLeft = pixelsToSeconds(
             e.target.scrollLeft,
             this.samplesPerPixel,
             this.sampleRate
           );
-
+          //BEM scroll
           this.ee.emit("scroll");
         },
         hook: new ScrollHook(this),
