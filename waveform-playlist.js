@@ -8166,7 +8166,7 @@ const MAX_CANVAS_WIDTH = 1000;
             console.log("BEM prerendered layout setVolumeGainLevel()");
             if (level>=0 && level<=1) {
                 this.volumeGain = level;
-                this.audio.volume = level
+                this.audio.volume = level;
             }
         }
 
@@ -8206,12 +8206,12 @@ const MAX_CANVAS_WIDTH = 1000;
             console.log("BEM shouldPlay?" + this.shouldPlay);
             console.log("BEM when:" + when + " ,start:" + start + " ,duration:" + duration);
             console.log(this);
-            if (this.audio) {
+            if (this.audio && this.audio.paused) {
                 console.log("BEM play prerenderedaudio start! con when:"+when+" e start:"+start);
                 this.audio.currentTime = start;
                 this.audio.play();
             } else {
-                console.Error("Error: No audio to start!");
+                console.log("Error: No audio to start!");
             }
             //this.source.start(when, start, duration);
         }
