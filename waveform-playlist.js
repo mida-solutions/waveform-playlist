@@ -7647,7 +7647,6 @@ const MAX_CANVAS_WIDTH = 1000;
        playoutSystem.play(when, start, duration);
 
     return sourcePromise;
-    return sourcePromise;
   }
 
   scheduleStop(when = 0) {
@@ -8095,7 +8094,6 @@ const MAX_CANVAS_WIDTH = 1000;
             this.audio = document.getElementById("prerendered_waveforms").children.item(index);
             this.shouldPlay = true;
             this.volumeGain = 1;
-            this.isPlaying = false;
         }
 
 
@@ -8225,7 +8223,9 @@ const MAX_CANVAS_WIDTH = 1000;
                 console.log("BEM play prerenderedaudio start! con when:"+when+" e start:"+start);
                 this.audio.currentTime = start;
                 this.audio.play();
-                console.log("BEM avvio audio quindi è in pausa? :" + this.audio.paused);
+
+                console.log(document.getElementById("aa").paused);
+                console.log("bem avvio play :" + this.audio.paused);
             } else {
                 console.log("Error: No audio to start!");
             }
@@ -9947,9 +9947,14 @@ class AnnotationList {
         return shouldPlay;
     }
 
-  isPlaying() {
+    isPlaying() {
+        console.log("bem isPrerenderedPaused?" + this.isPrerenderedPaused);
+        console.log("bem playlist isPlaying?");
+        for (let i = 0; i < this.tracks.length; i++)
+            console.log("bem traccia :" + this.tracks[i].src + " isPlaying?" + this.tracks[i].isPlaying());
     return this.tracks.reduce(
-      (isPlaying, track) => isPlaying || track.isPlaying(),
+        (isPlaying, track) => isPlaying || //this.isPrerenderedPaused || //BEM TODO questo risolverebbe il problema della waveform "gialla" quando progredisce ma manda tutto in loop
+            track.isPlaying(), 
       false
     );
   }
@@ -10021,7 +10026,7 @@ class AnnotationList {
             track.setState("cursor");
             console.log("BEM play event6.2");
             console.log(track);
-            console.log("BEM play event6.2.1");
+            console.log("BEM play event6.2.1 " + this.shouldTrackPlay(track));
             playoutPromises.push(
                 track.schedulePlay(currentTime, start, end, {
                     shouldPlay: this.shouldTrackPlay(track),
