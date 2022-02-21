@@ -8224,7 +8224,6 @@ const MAX_CANVAS_WIDTH = 1000;
                 this.audio.currentTime = start;
                 this.audio.play();
 
-                console.log(document.getElementById("aa").paused);
                 console.log("bem avvio play :" + this.audio.paused);
             } else {
                 console.log("Error: No audio to start!");
@@ -9953,8 +9952,7 @@ class AnnotationList {
         for (let i = 0; i < this.tracks.length; i++)
             console.log("bem traccia :" + this.tracks[i].src + " isPlaying?" + this.tracks[i].isPlaying());
     return this.tracks.reduce(
-        (isPlaying, track) => isPlaying || //this.isPrerenderedPaused || //BEM TODO questo risolverebbe il problema della waveform "gialla" quando progredisce ma manda tutto in loop
-            track.isPlaying(), 
+        (isPlaying, track) => isPlaying || track.isPlaying(), 
       false
     );
   }
@@ -10171,7 +10169,9 @@ class AnnotationList {
     const elapsed = currentTime - this.lastDraw;
 
       //BEM todo playlist qui fa il playing
-      if (this.isPlaying()) {
+      console.log("BEM updateeditor()");
+      console.log(this);
+      if (!this.isPrerenderedPaused || this.isPlaying()) {
           console.log("BEM updateEditor isPlaying true");
       const playbackSeconds = cursorPos + elapsed;
       this.ee.emit("timeupdate", playbackSeconds);
