@@ -6359,10 +6359,10 @@ class IdentityLoader extends Loader {
                 }
                 myResult.peaks.data = [];
                 myResult.peaks.data[0] = new Int16Array(peaksData.values());
-                myResult.peaks.length = myMultiplier * waveformData.data.length;
+                myResult.peaks.length = Math.ceil(myMultiplier * waveformData.data.length / 2); //non sono sicuro del perchè bisogni dividere per 2, probabilmente perchè i picchi sono uno di massimo e uno di minimo
 
                 for (const [key, value] of Object.entries(this.trackInfo)) {
-                    if (key != "src" && key != "peaksSrc")
+                    if (key != "src" && key != "peaksSrc" && key != "length")
                         myResult[key] = value;
                 }
 
@@ -7819,6 +7819,7 @@ const MAX_CANVAS_WIDTH = 1000;
 
     render(data) {
         console.log("BEM track render(data)");
+        console.log(this.peaks.length);
     const width = this.peaks.length;
     const playbackX = secondsToPixels(
       data.playbackSeconds,
@@ -10169,8 +10170,6 @@ class AnnotationList {
     const elapsed = currentTime - this.lastDraw;
 
       //BEM todo playlist qui fa il playing
-      console.log("BEM updateeditor()");
-      console.log(this);
       if (!this.isPrerenderedPaused || this.isPlaying()) {
           console.log("BEM updateEditor isPlaying true");
       const playbackSeconds = cursorPos + elapsed;
@@ -10314,7 +10313,8 @@ class AnnotationList {
     if (this.showTimescale) {
       containerChildren.push(this.renderTimeScale());
     }
-
+    console.log("BEM render di playlist");
+    console.log(this);
     containerChildren.push(this.renderTrackSection());
 
     if (this.annotationList.length) {
