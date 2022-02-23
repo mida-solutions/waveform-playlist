@@ -7507,7 +7507,9 @@ const MAX_CANVAS_WIDTH = 1000;
     return this.startTime;
   }
 
-  getEndTime() {
+    getEndTime() {
+        console.log("BEM endtime:" + this.endTime);
+        console.log(this);
     return this.endTime;
   }
 
@@ -10172,8 +10174,14 @@ class AnnotationList {
     const cursorPos = cursor || this.cursor;
     const elapsed = currentTime - this.lastDraw;
 
+      console.log("BEM selection");
+      console.log(selection);
       //BEM todo playlist qui fa il playing
-      if (!this.isPrerenderedPaused || this.isPlaying()) {
+      if ((!this.isPrerenderedPaused || this.isPlaying()) &&
+          (cursorPos + elapsed <
+          (this.isSegmentSelection() ? selection.end : this.duration))
+
+      ) {
           console.log("BEM updateEditor isPlaying true");
       const playbackSeconds = cursorPos + elapsed;
       this.ee.emit("timeupdate", playbackSeconds);
@@ -10190,6 +10198,7 @@ class AnnotationList {
         cursorPos + elapsed >=
         (this.isSegmentSelection() ? selection.end : this.duration)
       ) {
+          console.log("BEM emetto finished");
         this.ee.emit("finished");
       }
 
