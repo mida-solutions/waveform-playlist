@@ -6385,13 +6385,14 @@ class IdentityLoader extends Loader {
         /**
          * Loads an audio file via XHR.
          */
-        load() {
+    load() {
             return new Promise((resolve, reject) => {
                 if (!this.trackInfo.peaksSrc)
                    resolve(undefined);
                 const xhr = new XMLHttpRequest();
                 console.log("BEM this.trackInfo.peaksSrc:" + this.trackInfo.peaksSrc);
                 console.log(this);
+
                 xhr.open("GET", this.trackInfo.peaksSrc, true);
                 xhr.responseType = "json";
                 xhr.send();
@@ -9478,6 +9479,7 @@ class AnnotationList {
 
     //BEM foreach track of the tracklist, loads the audio. Return a Promise with audioBuffer object inside
     load(allTrackList) {
+        document.getElementById("prerendered_waveforms").innerHTML = '';
         console.log(allTrackList);
         var trackList = [];
         var prerenderedTrackList = [];
@@ -9505,6 +9507,7 @@ class AnnotationList {
 
 
         const loadWaveforms = prerenderedTrackList.map((trackInfo) => {
+
         console.log("BEM trackInfo");
         console.log(trackInfo);
         const wfloader = LoaderFactory.createWaveformLoader(
