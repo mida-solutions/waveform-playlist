@@ -7730,7 +7730,7 @@ const MAX_CANVAS_WIDTH = 1000;
     if (widgets.remove) {
       headerChildren.push(removeTrack);
     }
-    headerChildren.push(trackName);
+    //headerChildren.push(trackName); TODO uncomment to add the track name
     if (widgets.collapse) {
       headerChildren.push(collapseTrack);
     }
@@ -10194,6 +10194,9 @@ class AnnotationList {
       this.lastDraw = currentTime;
       } else {
           console.log("BEM updateEditor isPlaying false");
+          console.log("cursorPos:" + cursorPos);
+          console.log("elapsed:" + elapsed);
+          console.log(this.isSegmentSelection() ? selection.end : this.duration);
       if (
         cursorPos + elapsed >=
         (this.isSegmentSelection() ? selection.end : this.duration)
@@ -10278,10 +10281,12 @@ class AnnotationList {
     return timeScale.render();
   }
 
-  renderTrackSection() {
+    renderTrackSection() {
+        console.log("BEM renderTrackSection()");
+        console.log(this);
     const trackElements = this.tracks.map((track) => {
         const collapsed = this.collapsedTracks.indexOf(track) > -1;
-        if (track.playout instanceof PrerenderedPlayout && this.shouldPrerenderedTrackPlay(track) && !playlist.isPrerenderedPaused) {
+        if (track.playout instanceof PrerenderedPlayout && this.shouldPrerenderedTrackPlay(track) && !this.isPrerenderedPaused) {
             track.playout.play(track.startTime, this.getCurrentTime() - track.startTime, track.duration);
         }
       return track.render(
