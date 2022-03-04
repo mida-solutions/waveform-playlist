@@ -5764,7 +5764,6 @@ function appendPatch(apply, patch) {
 
 /***/ 4991:
 /***/ ((module) => {
-        console.log("BEM 4991");
 "use strict";
 
 
@@ -5808,9 +5807,7 @@ function convert(n, bits) {
  * @param {TypedArray} channel - Audio track frames to calculate peaks from.
  * @param {Number} samplesPerPixel - Audio frames per peak
  */
-        function extractPeaks(channel, samplesPerPixel, bits) {
-            console.log("extractPeaks samplesPerPixel:" + samplesPerPixel);
-            console.log("extractPeaks channel.length:" + channel.length);
+function extractPeaks(channel, samplesPerPixel, bits) {
   var i;
   var chanLength = channel.length;
   var numPeaks = Math.ceil(chanLength / samplesPerPixel);
@@ -5822,10 +5819,7 @@ function convert(n, bits) {
   var extrema;
 
   //create interleaved array of min,max
-            var peaks = makeTypedArray(bits, numPeaks * 2);
-                console.log("BEM chanLength:" + chanLength);
-            console.log("BEM numPeaks:" + numPeaks);
-            console.log("BEM samplesPerPixel:" + samplesPerPixel);
+  var peaks = makeTypedArray(bits, numPeaks * 2);
 
   for (i = 0; i < numPeaks; i++) {
     start = i * samplesPerPixel;
@@ -5902,30 +5896,16 @@ module.exports = function (
   bits,
   peaksContent
 ) {
-    console.log("BEM module.export");
-    console.log("BEM peaksContent:" + peaksContent);
-  samplesPerPixel = defaultNumber(samplesPerPixel, 1000);
+    samplesPerPixel = defaultNumber(samplesPerPixel, 1000);
     bits = defaultNumber(bits, 16);
-    console.log("BEM bits:" + bits);
-    console.log("BEM HERE");
-
+  
   if (isMono === null || isMono === undefined) {
     isMono = true;
   }
 
-    console.log("BEM HERE2");
   if ([8, 16, 32].indexOf(bits) < 0) {
     throw new Error("Invalid number of bits specified for peaks.");
     }
-    console.log("BEM HERE3");
-    console.log("BEM source:");
-    console.log(source);
-    console.log(samplesPerPixel);
-    console.log(isMono);
-    console.log(cueIn);
-    console.log(cueOut);
-    console.log(bits);
-    console.log(peaksContent);
   var numChan = source.numberOfChannels;
   var peaks = [];
   var c;
@@ -5937,27 +5917,16 @@ module.exports = function (
   cueOut = defaultNumber(cueOut, source.length);
 
     if (typeof source.subarray === "undefined") {
-        console.log("BEM undefined");
     for (c = 0; c < numChan; c++) {
         channel = source.getChannelData(c);
         slice = channel.subarray(cueIn, cueOut);
-        console.log("BEM channel length:"+channel.length);
-        console.log("BEM slice length:" +slice.length);
-        //console.log("BEM peaks che arrivano:" + this.peaksContent);
-        console.log("BEM peaks calcolati:" + extractPeaks(slice, samplesPerPixel, bits) );
-        console.log("BEM calcolo peaks:");
-        console.log(slice);
-        console.log("samplesPerPixel=" + samplesPerPixel);
-        console.log("bits=" + bits);
       if(peaksContent == null)
             peaksContent = extractPeaks(slice, samplesPerPixel, bits);
       peaks.push(peaksContent);
     }
     } else {
-        console.log("BEM else");
         if (peaksContent == null)
             peaksContent = extractPeaks(source.subarray(cueIn, cueOut), samplesPerPixel, bits);
-        //console.log("BEM peaksContent:" + peaksContent);
         peaks.push(peaksContent);
   }
 
@@ -6164,8 +6133,6 @@ const STATE_FINISHED = 3;
     this.ac = audioContext;
     this.audioRequestState = STATE_UNINITIALIZED;
       this.ee = ee;
-      console.log("BEM costruzione default loader ee:");
-      console.log(ee);
     }
 
   setStateChange(state) {
@@ -6197,8 +6164,6 @@ const STATE_FINISHED = 3;
       this.ac.decodeAudioData(
         audioData,
           (audioBuffer) => {
-              console.log(audioBuffer);
-              console.log("BEM decodeAudioData -" + new Date().toLocaleString());
               this.audioBuffer = audioBuffer;
               this.setStateChange(STATE_FINISHED);
               resolve(audioBuffer);
@@ -6275,7 +6240,6 @@ class IdentityLoader extends Loader {
   load() {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      console.log("BEM loading audio file with xhr");
       xhr.open("GET", this.src, true);
       xhr.responseType = "arraybuffer";
       xhr.send();
@@ -6290,8 +6254,6 @@ class IdentityLoader extends Loader {
 
         decoderPromise
             .then((audioBuffer) => {
-                console.log("BEM resolve audioBuffer - " + new Date().toLocaleString());
-                console.log(audioBuffer);
                 resolve(audioBuffer);
           })
           .catch(reject);
@@ -6317,8 +6279,6 @@ class IdentityLoader extends Loader {
             this.trackInfo = trackInfo;
             this.ee = ee;
             this.waveformRequestState = WAVEFORM_STATE_UNINITIALIZED;
-            console.log("BEM costruzion waveformloader ee:");
-            console.log(ee);
         }
 
         setStateChange(state) {
@@ -6340,17 +6300,10 @@ class IdentityLoader extends Loader {
 
         fileLoad(e) {
             const waveformData = e.target.response || e.target.result;
-            console.log("BEM waveform fileLoad - " + new Date().toLocaleString());
-            console.log(this.trackInfo);
             return new Promise((resolve, reject) => {
-                console.log("BEM FILELOAD RESOLVE:" + new Date().toLocaleString());
                 var myResult = {};
                 var myMultiplier = 48000 / waveformData.sample_rate;
-                console.log("BEM myMultiplier:" + myMultiplier);
                 myResult.peaks = JSON.parse(JSON.stringify(waveformData));
-                console.log(waveformData.data[100] + " e length:" + waveformData.data.length);
-                console.log();
-
                 var peaksData = [];
                 for (var i = 0; i < waveformData.data.length; i++) {
                     for (var j = i * myMultiplier; j < (i+1)*myMultiplier; j++) {
@@ -6365,10 +6318,6 @@ class IdentityLoader extends Loader {
                     if (key != "src" && key != "peaksSrc" && key != "length")
                         myResult[key] = value;
                 }
-
-                console.log(waveformData);
-                console.log(myResult);
-                console.log(this.trackInfo);
                 this.setStateChange(WAVEFORM_STATE_FINISHED);
                 if (waveformData == undefined || waveformData.data == undefined)
                     resolve(undefined);
@@ -6390,23 +6339,17 @@ class IdentityLoader extends Loader {
                 if (!this.trackInfo.peaksSrc)
                    resolve(undefined);
                 const xhr = new XMLHttpRequest();
-                console.log("BEM this.trackInfo.peaksSrc:" + this.trackInfo.peaksSrc);
-                console.log(this);
 
                 xhr.open("GET", this.trackInfo.peaksSrc, true);
                 xhr.responseType = "json";
                 xhr.send();
 
                 xhr.addEventListener("progress", (e) => {
-                    console.log("BEM XMLWAVEFORM PROGRESS");
                     super.fileProgress(e);
                 });
 
                 xhr.addEventListener("load", (e) => {
-                    console.log("BEM LOADING WAVEFORM!!!!!");
                     const decoderPromise = super.fileLoad(e);
-                    console.log("BEM decoderPromise");
-                    console.log(decoderPromise);
                     decoderPromise
                         .then((waveformBuffer) => {
                             var element = document.createElement("audio");
@@ -6452,7 +6395,6 @@ class IdentityLoader extends Loader {
     }
 
     static createWaveformLoader(trackInfo, ee) {
-        console.log("BEM typeof trackInfo:" + typeof (trackInfo) + " e vale:"+trackInfo);
         if (typeof trackInfo === "object") 
             return new XHRWaveformLoader(trackInfo, ee);
         throw new Error("Unsupported src type");
@@ -6472,7 +6414,6 @@ class IdentityLoader extends Loader {
 
   hook(node) {
       const playlist = this.playlist;
-      console.log("BEM hook");
     if (!playlist.isScrolling) {
       const el = node;
 
@@ -7469,8 +7410,6 @@ const MAX_CANVAS_WIDTH = 1000;
       const cueIn = secondsToSamples(this.cueIn, sampleRate);
       const cueOut = secondsToSamples(this.cueOut, sampleRate);
       const bits = undefined;
-      console.log("BEM pre setPeaks " + this.peaksContent);
-      console.log(this);
       this.setPeaks(
           webaudio_peaks_default()(
               this.buffer,
@@ -7482,13 +7421,9 @@ const MAX_CANVAS_WIDTH = 1000;
               this.peaksContent
          )
       );
-
-      console.log("BEM post setPeaks");
   }
 
     setPeaks(peaks) {
-        console.log("BEM peaks di setPeaks() :");
-        console.log(peaks);
     this.peaks = peaks;
   }
 
@@ -7508,8 +7443,6 @@ const MAX_CANVAS_WIDTH = 1000;
   }
 
     getEndTime() {
-        console.log("BEM endtime:" + this.endTime);
-        console.log(this);
     return this.endTime;
   }
 
@@ -7522,7 +7455,6 @@ const MAX_CANVAS_WIDTH = 1000;
   }
 
     isPlaying() {
-        console.log("BEM track isPlaying()");
     return this.playout.isPlaying();
   }
 
@@ -7552,9 +7484,6 @@ const MAX_CANVAS_WIDTH = 1000;
     is either stopped or plays out naturally.
   */
     schedulePlay(now, startTime, endTime, config) {
-        console.log("BEM schedulePlay - now:" + now + ", startTime:" + startTime + ", endTime:" + endTime);
-        console.log(config);
-        console.log(this);
     let start;
     let duration;
     let when = now;
@@ -7585,7 +7514,6 @@ const MAX_CANVAS_WIDTH = 1000;
 
     // the track starts in the future or on the cursor position
         if (this.startTime >= startTime) {
-            console.log("BEM this.startTime:" + this.startTime + " e startTime:" + startTime);
       start = 0;
       // schedule additional delay for this audio node.
       when += this.startTime - startTime;
@@ -7644,8 +7572,6 @@ const MAX_CANVAS_WIDTH = 1000;
     playoutSystem.setShouldPlay(options.shouldPlay);
     playoutSystem.setMasterGainLevel(options.masterGain);
     playoutSystem.setStereoPanValue(this.stereoPan);
-        console.log("BEM playoutSystem.play()");
-        console.log(playoutSystem);
     if (!(playoutSystem instanceof PrerenderedPlayout ))
        playoutSystem.play(when, start, duration);
 
@@ -7821,17 +7747,12 @@ const MAX_CANVAS_WIDTH = 1000;
   }
 
     render(data) {
-        console.log("BEM track render(data)");
-        console.log(this.peaks.length);
     const width = this.peaks.length;
     const playbackX = secondsToPixels(
       data.playbackSeconds,
       data.resolution,
       data.sampleRate
         );
-        console.log("BEM data.playbackSeconds:" + data.playbackSeconds);
-        console.log("BEM data.resolution:" + data.resolution);
-        console.log("BEM data.sampleRate:" + data.sampleRate);
     const startX = secondsToPixels(
       this.startTime,
       data.resolution,
@@ -7853,13 +7774,6 @@ const MAX_CANVAS_WIDTH = 1000;
         progressWidth = width;
       }
     }
-
-        console.log("BEM playbackX:" + playbackX);
-        console.log("BEM progressWidth:" + progressWidth);
-        console.log("BEM startX:" + startX);
-        console.log("BEM endX:" + endX);
-        console.log("BEM this.endTime:" + this.endTime);
-
     const waveformChildren = [
       h_default()("div.cursor", {
         attributes: {
@@ -8120,8 +8034,6 @@ const MAX_CANVAS_WIDTH = 1000;
         //}
 
         isPlaying() {
-            console.log("bem playout isplaying()" + !this.audio.paused);
-            console.log(this.audio);
             return !this.audio.paused;
         }
 
@@ -8180,7 +8092,6 @@ const MAX_CANVAS_WIDTH = 1000;
         }
 
         setVolumeGainLevel(level) {
-            console.log("BEM prerendered layout setVolumeGainLevel()");
             if (level>=0 && level<=1) {
                 this.volumeGain = level;
                 this.audio.volume = level;
@@ -8188,7 +8099,6 @@ const MAX_CANVAS_WIDTH = 1000;
         }
 
         setShouldPlay(bool) {
-            console.log("BEM prerendered layout setShouldPlay():"+bool);
             this.shouldPlay = bool;
             this.audio.muted = !bool;
         }
@@ -8219,16 +8129,9 @@ const MAX_CANVAS_WIDTH = 1000;
           Unfortunately it doesn't seem to work if you just give it a start time.
         */
         play(when, start, duration) {
-            console.log("BEM print prerenderedplay info:");
-            console.log("BEM shouldPlay?" + this.shouldPlay);
-            console.log("BEM when:" + when + " ,start:" + start + " ,duration:" + duration);
-            console.log(this);
             if (this.audio && this.audio.paused) {
-                console.log("BEM play prerenderedaudio start! con when:"+when+" e start:"+start);
                 this.audio.currentTime = start;
                 this.audio.play();
-
-                console.log("bem avvio play :" + this.audio.paused);
             } else {
                 console.log("Error: No audio to start!");
             }
@@ -8237,7 +8140,6 @@ const MAX_CANVAS_WIDTH = 1000;
 
         stop(when = 0) {
             if (this.audio) {
-                console.log("BEM stop prerenderedaudio start!");
                 this.audio.pause();
             } else {
                 console.log("Error: No audio to stop!");
@@ -8376,9 +8278,6 @@ const MAX_CANVAS_WIDTH = 1000;
     Unfortunately it doesn't seem to work if you just give it a start time.
   */
     play(when, start, duration) {
-        console.log("BEM print play info:");
-        console.log("BEM when:" + when + " ,start:" + start + " ,duration:" + duration);
-        console.log(this);
     this.source.start(when, start, duration);
   }
 
@@ -9296,7 +9195,6 @@ class AnnotationList {
   }
 
   setUpEventEmitter() {
-        console.log("BEM start setup eventemitter");
     const ee = this.ee;
 
     ee.on("automaticscroll", (val) => {
@@ -9341,10 +9239,8 @@ class AnnotationList {
     });
 
     ee.on("play", (start, end) => {
-          console.log("BEM ee.play");
           this.isPrerenderedPaused = false;
           this.play(start, end);
-          console.log("BEM after ee.play");
     });
 
     ee.on("pause", () => {
@@ -9476,13 +9372,11 @@ class AnnotationList {
         this.isScrolling = false;
       }, 200);
     });
-      console.log("BEM end setup eventemitter");
   }
 
     //BEM foreach track of the tracklist, loads the audio. Return a Promise with audioBuffer object inside
     load(allTrackList) {
         document.getElementById("prerendered_waveforms").innerHTML = '';
-        console.log(allTrackList);
         var trackList = [];
         var prerenderedTrackList = [];
         allTrackList.forEach(track => {
@@ -9492,10 +9386,6 @@ class AnnotationList {
                 prerenderedTrackList.push(track);
         });
 
-        console.log("BEM - load typeof(trackInfo):" + typeof (trackList[0]) + " time - " + new Date().toLocaleString());
-        console.log(trackList);
-
-  
     const loadPromises = trackList.map((trackInfo) => {
       const loader = LoaderFactory.createLoader(
         trackInfo.src,
@@ -9509,9 +9399,6 @@ class AnnotationList {
 
 
         const loadWaveforms = prerenderedTrackList.map((trackInfo) => {
-
-        console.log("BEM trackInfo");
-        console.log(trackInfo);
         const wfloader = LoaderFactory.createWaveformLoader(
             trackInfo,
             this.ee
@@ -9521,16 +9408,9 @@ class AnnotationList {
 
 
         Promise.all(loadWaveforms).then((peaksInfo) => {
-            console.log("BEM loaded all waveforms, printing values - " + new Date().toLocaleString());
-            console.log(peaksInfo);
-            console.log(prerenderedTrackList);
-
-            this.ee.emit("audiosourcesloaded");
-            console.log("BEM loaded all waveforms " + new Date().toLocaleString());
+            this.ee.emit("prerenderedwaveformsloaded");
 
             const tracks = prerenderedTrackList.map((prerenderedTrack, index) => {
-                console.log("BEM prerenderedTrackList:");
-                console.log(peaksInfo);
                 const info = peaksInfo[index];
                 const name = info.name || "Untitled";
                 const start = info.start || 0;
@@ -9548,7 +9428,6 @@ class AnnotationList {
                 const waveOutlineColor = info.waveOutlineColor || undefined;
                 const stereoPan = info.stereoPan || 0;
                 const duration = document.getElementById("prerendered_waveforms").children.item(index).duration;
-                console.log("BEM prerendered duration:"+duration);
                 const audioBuffer = new AudioBuffer({ duration: duration, length: info.peaks.length, numberOfChannels: info.peaks.channels, sampleRate: info.peaks.sample_rate});
 
                 // webaudio specific playout for now.
@@ -9558,14 +9437,12 @@ class AnnotationList {
                 track.src = prerenderedTrack.src;
                 track.setBuffer(audioBuffer);
                 track.setName(name);
-                console.log("BEM eventEmitter:");
                 track.setEventEmitter(this.ee);
                 track.setEnabledStates(states);
                 track.setCues(cueIn, cueOut);
                 track.setCustomClass(customClass);
                 track.setWaveOutlineColor(waveOutlineColor);
                 track.setDuration(duration);
-                console.log("end setup track");
 
                 if (fadeIn !== undefined) {
                     track.setFadeIn(fadeIn.duration, fadeIn.shape);
@@ -9598,22 +9475,16 @@ class AnnotationList {
                 if (soloed) {
                     this.soloTrack(track);
                 }
-
-                console.log("BEM setto peaks per index:" +index + " con duration:"+track.getDuration());
-                console.log(peaksInfo);
                 track.setPeaks(peaksInfo[index].peaks);
-                console.log(track);
-
                 return track;
             });
 
             this.tracks = this.tracks.concat(tracks);
             this.adjustDuration();
-            console.log("BEM start render loadWaveforms - " + new Date().toLocaleString());
             this.draw(this.render());
-            console.log("BEM end render - " + new Date().toLocaleString());
-
-            this.ee.emit("audiosourcesrendered");
+            this.ee.emit("prerenderedwaveformsrendered");
+        }).catch((e) => {
+            this.ee.emit("audiosourceserror", e);
         });
 
 
@@ -9623,15 +9494,7 @@ class AnnotationList {
       return Promise.all(loadPromises)
       .then((audioBuffers) => {
           this.ee.emit("audiosourcesloaded");
-          console.log("BEM loaded all tracks " + new Date().toLocaleString());
-
-          console.log(audioBuffers);
-
           const tracks = audioBuffers.map((audioBuffer, index) => {
-            console.log("BEM trackList:");
-            console.log(trackList);
-            console.log("BEM audioBuffer:");
-            console.log(audioBuffer);
           const info = trackList[index];
           const name = info.name || "Untitled";
           const start = info.start || 0;
@@ -9661,7 +9524,6 @@ class AnnotationList {
           track.setCues(cueIn, cueOut);
           track.setCustomClass(customClass);
           track.setWaveOutlineColor(waveOutlineColor);
-          console.log("end setup track");
 
           if (fadeIn !== undefined) {
             track.setFadeIn(fadeIn.duration, fadeIn.shape);
@@ -9696,21 +9558,14 @@ class AnnotationList {
           }
 
           // extract peaks with AudioContext for now.
-          console.log("BEM pre calculate peaks with samplesPerPixel:" + this.samplesPerPixel + " and sampleRate:" + this.sampleRate);
           track.calculatePeaks(this.samplesPerPixel, this.sampleRate);
-          console.log("BEM post calculate peaks");
-              
-                console.log(track);
+          
           return track;
         });
 
         this.tracks = this.tracks.concat(tracks);
-          this.adjustDuration();
-          this.draw(this.render());
-          console.log("BEM start render loadPromises - " + new Date().toLocaleString());
-          console.log(this);
-          console.log("BEM end render - " + new Date().toLocaleString());
-          console.log(this.tracks);
+        this.adjustDuration();
+        this.draw(this.render());
         this.ee.emit("audiosourcesrendered");
       })
       .catch((e) => {
@@ -9908,10 +9763,7 @@ class AnnotationList {
   }
     
     adjustTrackPlayout() {
-      console.log("BEM adjustTrackPlayout");
       this.tracks.forEach((track) => {
-          console.log(track);
-          console.log("BEM questa traccia dovrebbe essere riprodotta? " + this.shouldTrackPlay(track));
           track.setShouldPlay(this.shouldTrackPlay(track));
     });
   }
@@ -9944,19 +9796,12 @@ class AnnotationList {
     shouldPrerenderedTrackPlay(track) {
         let shouldPlay = true;
         if (track.playout instanceof PrerenderedPlayout && (this.getCurrentTime() < track.startTime || this.getCurrentTime() > (track.duration + track.startTime))) {
-            console.log("BEM should play false because prerenderedplayout with delay - this.getCurrentTime():" + this.getCurrentTime() + " track.startTime:" + track.startTime + "track.duration:"+track.duration);
             shouldPlay = false;
         }
-        console.log("BEM track:" + track.src + " should play?" + shouldPlay + " con currentTime:" + this.getCurrentTime());
-        console.log(track);
         return shouldPlay;
     }
 
     isPlaying() {
-        console.log("bem isPrerenderedPaused?" + this.isPrerenderedPaused);
-        console.log("bem playlist isPlaying?");
-        for (let i = 0; i < this.tracks.length; i++)
-            console.log("bem traccia :" + this.tracks[i].src + " isPlaying?" + this.tracks[i].isPlaying());
     return this.tracks.reduce(
         (isPlaying, track) => isPlaying || track.isPlaying(), 
       false
@@ -9968,12 +9813,6 @@ class AnnotationList {
    */
   getCurrentTime() {
       const cursorPos = this.lastSeeked || this.pausedAt || this.cursor;
-      console.log("cursorPos:" + cursorPos);
-      console.log("this.lastSeeked:" + this.lastSeeked);
-      console.log("this.pausedAt:" + this.pausedAt);
-      console.log("this.cursor:" + this.cursor);
-      console.log("this.getElapsedTime():" + this.getElapsedTime());
-
       return cursorPos + (isNaN(this.getElapsedTime()) ? 0 : this.getElapsedTime());
   }
 
@@ -9986,7 +9825,6 @@ class AnnotationList {
   }
 
     restartPlayFrom(start, end) {
-        console.log("BEM restartPlayFrom");
     this.stopAnimation();
 
     this.tracks.forEach((editor) => {
@@ -9999,60 +9837,37 @@ class AnnotationList {
   }
 
     play(startTime, endTime) {
-        console.log("BEM play event");
-        console.log(this.tracks);
     clearTimeout(this.resetDrawTimer);
-
-        console.log("BEM play event2");
     const currentTime = this.ac.currentTime;
     const selected = this.getTimeSelection();
     const playoutPromises = [];
-
-        console.log("BEM play event3");
     const start = startTime || this.pausedAt || this.cursor;
     let end = endTime;
-
-        console.log("BEM play event4");
     if (!end && selected.end !== selected.start && selected.end > start) {
       end = selected.end;
-        }
-        console.log("BEM play event5");
-        console.log(this);
-        console.log("BEM isPlaying() ? " + this.isPlaying());
-        if (this.isPlaying()) {
-            console.log("BEM isPlaying()");
+    }
+    if (this.isPlaying()) {
       return this.restartPlayFrom(start, end);
-        }
-        console.log("BEM play event6");
+    }
 
-        this.tracks.forEach((track) => {
-            console.log("BEM play event6.1");
-            track.setState("cursor");
-            console.log("BEM play event6.2");
-            console.log(track);
-            console.log("BEM play event6.2.1 " + this.shouldTrackPlay(track));
-            playoutPromises.push(
-                track.schedulePlay(currentTime, start, end, {
-                    shouldPlay: this.shouldTrackPlay(track),
-                    masterGain: this.masterGain,
-                })
-            );
-        console.log("BEM play event6.3");
+    this.tracks.forEach((track) => {
+        track.setState("cursor");
+        playoutPromises.push(
+            track.schedulePlay(currentTime, start, end, {
+                shouldPlay: this.shouldTrackPlay(track),
+                masterGain: this.masterGain,
+            })
+        );
     });
-        console.log("BEM play event7");
 
     this.lastPlay = currentTime;
     // use these to track when the playlist has fully stopped.
     this.playoutPromises = playoutPromises;
-        console.log("BEM play event8");
     this.startAnimation(start);
-
-        console.log("BEM play event9");
     return Promise.all(this.playoutPromises);
   }
 
     pause() {
-        console.log("BEM pause event");
     if (!this.isPlaying()) {
       return Promise.all(this.playoutPromises);
     }
@@ -10062,7 +9877,6 @@ class AnnotationList {
   }
 
     stop() {
-        console.log("BEM stop event");
     if (this.mediaRecorder && this.mediaRecorder.state === "recording") {
       this.mediaRecorder.stop();
     }
@@ -10173,16 +9987,11 @@ class AnnotationList {
     const selection = this.getTimeSelection();
     const cursorPos = cursor || this.cursor;
     const elapsed = currentTime - this.lastDraw;
-
-      console.log("BEM selection");
-      console.log(selection);
-      //BEM todo playlist qui fa il playing
       if ((!this.isPrerenderedPaused || this.isPlaying()) &&
           (cursorPos + elapsed <
           (this.isSegmentSelection() ? selection.end : this.duration))
 
       ) {
-          console.log("BEM updateEditor isPlaying true");
       const playbackSeconds = cursorPos + elapsed;
       this.ee.emit("timeupdate", playbackSeconds);
       this.animationRequest = window.requestAnimationFrame(() => {
@@ -10193,15 +10002,10 @@ class AnnotationList {
       this.draw(this.render());
       this.lastDraw = currentTime;
       } else {
-          console.log("BEM updateEditor isPlaying false");
-          console.log("cursorPos:" + cursorPos);
-          console.log("elapsed:" + elapsed);
-          console.log(this.isSegmentSelection() ? selection.end : this.duration);
-      if (
+        if (
         cursorPos + elapsed >=
         (this.isSegmentSelection() ? selection.end : this.duration)
       ) {
-          console.log("BEM emetto finished");
         this.ee.emit("finished");
       }
 
@@ -10282,8 +10086,6 @@ class AnnotationList {
   }
 
     renderTrackSection() {
-        console.log("BEM renderTrackSection()");
-        console.log(this);
     const trackElements = this.tracks.map((track) => {
         const collapsed = this.collapsedTracks.indexOf(track) > -1;
         if (track.playout instanceof PrerenderedPlayout && this.shouldPrerenderedTrackPlay(track) && !this.isPrerenderedPaused) {
@@ -10300,7 +10102,6 @@ class AnnotationList {
         })
       );
     });
-      console.log("dovrebbe ritornare per il hook");
     return h_default()(
       "div.playlist-tracks",
       {
@@ -10308,8 +10109,6 @@ class AnnotationList {
           style: "overflow: auto;",
           },
         onscroll: (e) => {
-          console.log("BEM scrolling");
-          console.log(e);
           this.scrollLeft = pixelsToSeconds(
             e.target.scrollLeft,
             this.samplesPerPixel,
@@ -10330,8 +10129,6 @@ class AnnotationList {
     if (this.showTimescale) {
       containerChildren.push(this.renderTimeScale());
     }
-    console.log("BEM render di playlist");
-    console.log(this);
     containerChildren.push(this.renderTrackSection());
 
     if (this.annotationList.length) {
@@ -10464,10 +10261,7 @@ function init(options = {}, ee = event_emitter_default()()) {
 }
 
 })();
-    console.log("BEM pre __webpack_exports__");
     WaveformPlaylist = __webpack_exports__;
-    console.log("BEM post __webpack_exports__");
     /******/
 })()
-console.log("BEM post externaal waveform-playlist");
 ;
