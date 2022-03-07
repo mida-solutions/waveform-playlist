@@ -9374,7 +9374,7 @@ class AnnotationList {
     });
   }
 
-    //BEM foreach track of the tracklist, loads the audio. Return a Promise with audioBuffer object inside
+    //foreach track of the tracklist, loads the audio. Return a Promise with audioBuffer object inside
     load(allTrackList) {
         document.getElementById("prerendered_waveforms").innerHTML = '';
         var trackList = [];
@@ -10114,7 +10114,6 @@ class AnnotationList {
             this.samplesPerPixel,
             this.sampleRate
           );
-          //BEM scroll
           this.ee.emit("scroll");
         },
         hook: new ScrollHook(this),
