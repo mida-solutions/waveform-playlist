@@ -8132,7 +8132,7 @@ const MAX_CANVAS_WIDTH = 1000;
             if (this.audio && this.audio.paused) {
                 this.audio.currentTime = start;
                 this.audio.play();
-            } else {
+            } else if(!this.audio) {
                 console.log("Error: No audio to start!");
             }
             //this.source.start(when, start, duration);
@@ -9427,11 +9427,18 @@ class AnnotationList {
                 const customClass = info.customClass || undefined;
                 const waveOutlineColor = info.waveOutlineColor || undefined;
                 const stereoPan = info.stereoPan || 0;
-                const duration = document.getElementById("prerendered_waveforms").children.item(index).duration;
+                let waveformchildren = document.getElementById("prerendered_waveforms").children;
+                let myIndex = -1;
+                Array.from(waveformchildren).forEach(function (element) {
+                  if (element.children.item(0).src.endsWith(prerenderedTrack.src))
+                       myIndex = Array.prototype.slice.call(waveformchildren).indexOf(element);
+                });
+                if (myIndex == -1)
+                    console.error("cannot find media:" + prerenderedTrack.src);
+                const duration = document.getElementById("prerendered_waveforms").children.item(myIndex).duration;
                 const audioBuffer = new AudioBuffer({ duration: duration, length: info.peaks.length, numberOfChannels: info.peaks.channels, sampleRate: info.peaks.sample_rate});
-
                 // webaudio specific playout for now.
-                const playout = new PrerenderedPlayout(index);
+                const playout = new PrerenderedPlayout(myIndex);
 
                 const track = new Track();
                 track.src = prerenderedTrack.src;
