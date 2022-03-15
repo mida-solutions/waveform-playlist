@@ -6416,7 +6416,6 @@ class IdentityLoader extends Loader {
       const playlist = this.playlist;
     if (!playlist.isScrolling) {
       const el = node;
-
       if (playlist.isAutomaticScroll) {
         const rect = node.getBoundingClientRect();
         const controlWidth = playlist.controls.show
@@ -7406,6 +7405,53 @@ const MAX_CANVAS_WIDTH = 1000;
     this.peakData = data;
   }
 
+
+    interpolateArray(data, fitCount) {
+
+        var linearInterpolate = function (before, after, atPoint) {
+            return before + (after - before) * atPoint;
+        };
+
+        var newData = new Array();
+        var springFactor = new Number((data.length - 1) / (fitCount - 1));
+        newData[0] = data[0]; // for new allocation
+        for (var i = 1; i < fitCount - 1; i++) {
+            var tmp = i * springFactor;
+            var before = new Number(Math.floor(tmp)).toFixed();
+            var after = new Number(Math.ceil(tmp)).toFixed();
+            var atPoint = tmp - before;
+            newData[i] = linearInterpolate(data[before], data[after], atPoint);
+        }
+        newData[fitCount - 1] = data[data.length - 1]; // for new allocation
+        return newData;
+    };
+
+
+    interpolatePeaks(samplesPerPixel) {
+        const dataPeaks = this.peaks.data[0];
+        var newNumPeaks = Math.ceil(dataPeaks.length * this.peaks.samples_per_pixel / samplesPerPixel)/2;
+        var maxPeaksData = [];
+        var minPeaksData = [];
+        for (let i = 0; i < dataPeaks.length; i++) {
+            if (i % 2 == 0)
+                maxPeaksData.push(dataPeaks[i]);
+            else
+                minPeaksData.push(dataPeaks[i]);
+        }
+        var newMaxPeaksData = this.interpolateArray(maxPeaksData, newNumPeaks);
+        var newMinPeaksData = this.interpolateArray(minPeaksData, newNumPeaks);
+        var newPeaksData = [];
+        for (let i = 0; i < newNumPeaks*2; i++) {
+            if (i % 2 == 0)
+                newPeaksData.push(newMaxPeaksData[Math.ceil(i/2)]);
+            else
+                newPeaksData.push(newMinPeaksData[Math.ceil(i/2)]);
+        }
+        this.peaks.data[0] = newPeaksData;
+        this.peaks.length = newPeaksData.length / 2;
+        this.peaks.samples_per_pixel = samplesPerPixel;
+    }
+
     calculatePeaks(samplesPerPixel, sampleRate) {
       const cueIn = secondsToSamples(this.cueIn, sampleRate);
       const cueOut = secondsToSamples(this.cueOut, sampleRate);
@@ -7419,8 +7465,8 @@ const MAX_CANVAS_WIDTH = 1000;
               cueOut,
               bits,
               this.peaksContent
-         )
-      );
+          )
+        );
   }
 
     setPeaks(peaks) {
@@ -9711,8 +9757,11 @@ class AnnotationList {
   setZoom(zoom) {
     this.samplesPerPixel = zoom;
     this.zoomIndex = this.zoomLevels.indexOf(zoom);
-    this.tracks.forEach((track) => {
-      track.calculatePeaks(zoom, this.sampleRate);
+      this.tracks.forEach((track) => {
+          if (track.playout instanceof PrerenderedPlayout)
+              track.interpolatePeaks(zoom);
+          else
+              track.calculatePeaks(zoom, this.sampleRate);
     });
   }
 
