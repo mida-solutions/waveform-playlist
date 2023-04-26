@@ -9252,11 +9252,11 @@ class AnnotationList {
       this.drawRequest();
     });
 
-    ee.on("select", (start, end, track) => {
+    ee.on("select", (start, end, track, skipPlay) => {
       if (this.isPlaying()) {
         this.lastSeeked = start;
         this.pausedAt = undefined;
-        this.restartPlayFrom(start);
+        this.restartPlayFrom(start, skipPlay);
       } else {
         // reset if it was paused.
         this.seek(start, end, track);
@@ -9880,16 +9880,17 @@ class AnnotationList {
     this.ee.emit("mastervolumechange", gain);
   }
 
-    restartPlayFrom(start, end) {
+    restartPlayFrom(start, end, skipPlay) {
     this.stopAnimation();
 
     this.tracks.forEach((editor) => {
       editor.scheduleStop();
     });
 
-    return Promise.all(this.playoutPromises).then(
-      this.play.bind(this, start, end)
-    );
+    return Promise.all(this.playoutPromises).then(function() {
+      if(skipPlay)
+      	this.play.bind(this, start, end);
+      });
   }
 
     play(startTime, endTime) {
