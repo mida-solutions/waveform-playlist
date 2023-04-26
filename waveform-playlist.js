@@ -9256,7 +9256,7 @@ class AnnotationList {
       if (this.isPlaying()) {
         this.lastSeeked = start;
         this.pausedAt = undefined;
-        this.restartPlayFrom(start, skipPlay);
+        this.restartPlayFrom(start, undefined, skipPlay);
       } else {
         // reset if it was paused.
         this.seek(start, end, track);
@@ -9888,7 +9888,7 @@ class AnnotationList {
     });
 
     return Promise.all(this.playoutPromises).then(function() {
-      if(skipPlay)
+      if(!skipPlay)
       	this.play.bind(this, start, end);
       });
   }
