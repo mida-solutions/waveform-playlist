@@ -6249,6 +6249,11 @@ class IdentityLoader extends Loader {
       });
 
       xhr.addEventListener("load", (e) => {
+		  if(e?.currentTarget?.status == 403) {
+			doLogout();
+			return false;
+		  }
+		  
           const decoderPromise = super.fileLoad(e);
 
 
