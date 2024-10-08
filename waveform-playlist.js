@@ -9886,17 +9886,16 @@ class AnnotationList {
   }
 
     restartPlayFrom(start, end, skipPlay) {
-    this.stopAnimation();
-
-    this.tracks.forEach((editor) => {
-      editor.scheduleStop();
-    });
-
-    return Promise.all(this.playoutPromises).then(function() {
-      if(!skipPlay)
-      	this.play.bind(this, start, end);
-      });
-  }
+		this.stopAnimation();
+		this.tracks.forEach((editor) => {
+			editor.scheduleStop();
+		});
+		return Promise.all(this.playoutPromises).then(() => {
+			if (!skipPlay) {
+				return this.play(start, end);
+			}
+		});
+	}
 
     play(startTime, endTime) {
     clearTimeout(this.resetDrawTimer);
